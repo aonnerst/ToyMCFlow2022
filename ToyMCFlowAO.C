@@ -22,9 +22,9 @@ int main(int argc, char **argv)
 
     TROOT root("flow","run mc");
 
-    if ( argc<3 ) {
+    if ( argc<4 ) {
                 cout<<"+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"<<endl;
-                cout<<"+  "<<argv[0]<<" <outputFile> <Nevt> <random seed> "<<endl;
+                cout<<"+  "<<argv[0]<<" <outputFile> <Nevt> <random seed> <bgfrac>"<<endl;
                 cout << endl << endl;
                 exit(1);
     }
@@ -33,6 +33,7 @@ int main(int argc, char **argv)
     char *outFile = argv[1];
     Int_t Nevt= atoi(argv[2]);
     Int_t random_seed = atoi(argv[3]);
+    Int_t bgfrac = atoi(argv[4]); //
     TRandom *myRandom = new TRandom(random_seed);
 	// Declare variables
 	cout<< strCentrality[0]<<endl;
@@ -50,6 +51,8 @@ int main(int argc, char **argv)
 	//Define uniform function for option B
 	TF1 *centSamp = new TF1("centSamp", "[0]",0.0,0.9);
 	centSamp->SetParameter(0,1.0);
+
+	
 
 	//Define histogram for option B
 	TH1D *hCentSample = new TH1D("hCentSample","hCentSample",3,-0.1,2.1);
@@ -72,9 +75,11 @@ int main(int argc, char **argv)
 	}
 	strformula+=")";
 	cout<<strformula<<endl;
-	
+	//signal
 	TF1 *fourier = new TF1("Fourier", strformula, 0.0, 2.0*TMath::Pi());
-
+	//background
+	TF1 *bgUniform = new TF1("bgUniform","[0]",0.0, 2.0*TMath::Pi());
+	bgUniform->SetParameter(0,50.0);
 	//range 0 to 2*pi
 	for (Int_t ih=0; ih<NH; ih++){
 
@@ -142,8 +147,13 @@ int main(int argc, char **argv)
     	for(int iH=0;iH<NH;iH++) QvectorsEP[iH] = TComplex(0,0);
 
     	vector <double> phiarray; //pharray is now vector
-	
-		for (Int_t t=0; t<Nch; t++)//track loop
+		for (Int_t t=0; t<Nch; t++) phiarray.push_back(fourier->GetRandom()); // generating signal
+		Int_t N_bg = Nch*bgfrac;
+
+		for (Int_t t=0; t<N_bg; t++) phiarray.push_back(bgUniform->GetRandom()); //generating background
+		
+		Int_t N_tot = phiarray.size();
+		for (Int_t t=0; t<N_tot; t++)//track loop
 		{
 			phiarray.push_back(fourier->GetRandom());
 			if(iEvent<NPhiHist) {
