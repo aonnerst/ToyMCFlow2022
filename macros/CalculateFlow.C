@@ -1,0 +1,150 @@
+#include "TMath.h"
+#include "TF1.h"
+#include "TCanvas.h"
+#include "TLegend.h"
+#include "TRandom3.h"
+#include "TH1.h"
+#include "TROOT.h"
+#include "TGraphErrors.h"
+#include "TFile.h"
+#include "TString.h"
+#include <TStopwatch.h>
+#include <TComplex.h>
+#include <vector>
+#include "include/toyflowinputs.h"
+
+using namespace std;
+
+//Input Histograms from ToyMCFlowAO.C
+TH1D *hPhiPsi[NH][NC]; //phi-psi_n (symmetry plane)
+TH1D *hPhiPsiQ[NH][NC]; // Q vector (event plane)
+TH1D *hEventPlane[NH][NC]; //single particle delta phi hist phi-psi_n (symmetry plane)
+TH1D *hEventPlaneEP[NH][NC]; // single particle delta phi hist Q vector (event plane)
+TH1D *hTPcosDeltaPhi[NH][NC]; // two particle delta phi ( phi_i-phi_j)
+TH1D *hPhiEvent[NPhiHist][NC]; // Event-by-event phi 
+TH1D *hResolution[NH][NC];
+TH1D *hResolutionDist[NH][NC];
+TH1D *hResolutionDistA[NH][NC];
+TH1D *hDeltaPhiSum[NC];
+//-----output-----
+const int NMethod=3;
+TGraphErrors *gr_vn_cent[NMethod][NH];
+TGraphErrors *gr_pvn[NC][NMethod];
+TString gr_Names[NMethod]={"SP","TP","EP"};
+void LoadData(TString inputfile);
+void Calculate();
+void SaveToRootfile(TString outputfile);
+
+// Main Function
+void CalculateFlow(TString inputfilename,TString outputfilename){
+	LoadData(inputfilename);
+	Calculate();
+}
+
+
+//---------------Member functions------------------
+void LoadData(TString inputfile){
+	TFile *fIn = TFile::Open(inputfile);
+	for(int ic=0; ic<NC; ic++){
+		hDeltaPhiSum[ic]=(TH1D*)fIn->Get(Form("hDeltaPhiSum_C%02d",ic));
+		hDeltaPhiSum[ic]->Rebin(2);
+		for()
+	}
+
+}
+
+void Calculate(){
+	Double_t MeanArrayTwoParticle[NH][NC]={{0.}};
+	Double_t MeanArrayEventPlane[NH][NC]={{0.}};
+	Double_t MeanArrayEventPlaneQVec[NH][NC]={{0.}};
+	Double_t MeanArrayEvtPlError[NH][NC]={{0.}};
+	Double_t MeanArrayEvtPlErrorQvec[NH][NC]={{0.}};
+	Double_t MeanArrayTwoPartError[NH][NC]={{0.}};
+	Double_t MeanArrayResolution[NH][NC]={{0.}};
+	Double_t MeanArrayResolutionError[NH][NC]={{0.}};
+	Double_t vn_obs_ERROR[NH][NC]={{0.}};
+	Double_t vn_TwoPart[NH][NC]={{0.}};
+	Double_t vn_EvtPl[NH][NC]={{0.}};
+	Double_t vn_EvtPlQvec[NH][NC]={{0.}};
+	Double_t vn_TwoPartError[NH][NC]={{0.}};
+
+
+
+	// Calculating the avarage over event
+	for (Int_t n=0; n<NH; n++)
+	{
+		for (Int_t ic=0; ic<NC; ic++){
+			MeanArrayTwoParticle[n][ic]=hTPcosDeltaPhi[n][ic]->GetMean();
+			MeanArrayTwoPartError[n][ic]=hTPcosDeltaPhi[n][ic]->GetMeanError();
+			MeanArrayEventPlane[n][ic]=hEventPlane[n][ic]->GetMean();
+			MeanArrayEvtPlError[n][ic]=hEventPlane[n][ic]->GetMeanError();
+			MeanArrayEventPlaneQVec[n][ic]=hEventPlaneEP[n][ic]->GetMean();
+			MeanArrayEvtPlErrorQvec[n][ic]=hEventPlaneEP[n][ic]->GetMeanError();
+			MeanArrayResolution[n][ic]=hResolution[n][ic]->GetMean();
+			MeanArrayResolutionError[n][ic]=hResolution[n][ic]->GetMeanError();
+
+
+
+			//for loop for swapping  vn arrays for vn[ic][n] !transformation!
+
+			vn_TwoPart[n][ic]=TMath::Sqrt(TMath::Abs(MeanArrayTwoParticle[n][ic]));
+			vn_TwoPartError[n][ic]=0.5*TMath::Power(MeanArrayTwoPartError[n][ic],-0.5);//Check error propagation in textbook
+			vn_EvtPl[n][ic]=MeanArrayEventPlane[n][ic];
+			vn_EvtPlQvec[n][ic]=MeanArrayEventPlaneQVec[n][ic]/MeanArrayResolution[n][ic];
+			vn_obs_ERROR[n][ic]=TMath::Abs(vn_EvtPlQvec[n][ic])*TMath::Sqrt(TMath::Power(MeanArrayEvtPlErrorQvec[n][ic]/MeanArrayEventPlaneQVec[n][ic],2)+TMath::Power(MeanArrayResolutionError[n][ic]/MeanArrayResolution[n][ic],2));	
+		}
+
+	}
+	// For Power spectra
+	Double_t pvn_obs_ERROR[NC][NH]={{0.}};
+	Double_t pvn_TwoPart[NC][NH]={{0.}};
+	Double_t pvn_EvtPl[NC][NH]={{0.}};
+	Double_t pvn_EvtPlQvec[NC][NH]={{0.}};
+	Double_t pvn_TwoPartError[NC][NH]={{0.}};
+	Double_t pMeanArrayEvtPlError[NC][NH]={{0.}};
+
+	for (int ic=0; ic<NC; ic++){
+		for (int ih=0; ih<NH; ih++){
+			pvn_obs_ERROR[ic][ih]        = vn_obs_ERROR[ih][ic];
+			pvn_TwoPart[ic][ih]          = vn_TwoPart[ih][ic];
+			pvn_EvtPl[ic][ih]            = vn_EvtPl[ih][ic];
+			pvn_EvtPlQvec[ic][ih]        = vn_EvtPlQvec[ih][ic];
+			pvn_TwoPartError[ic][ih]     = vn_TwoPartError[ih][ic];
+			pMeanArrayEvtPlError[ic][ih] = pMeanArrayEvtPlError[ih][ic];
+		}
+	}
+
+	//Fill graphs I drew in the sktech
+	double Cent[NC] = {0.,1.,2.};
+	double eCent[NC] = {0.,0.,0.};
+	
+
+	for (int ih=0; ih<NH; ih++) {
+		gr_vn_cent[0][ih]= new TGraphErrors(NC,Cent,vn_EvtPl[ih],eCent,MeanArrayEvtPlError[ih]); //add error here
+		gr_vn_cent[1][ih]= new TGraphErrors(NC,Cent,vn_TwoPart[ih],eCent,vn_TwoPartError[ih]); //add error here
+		gr_vn_cent[2][ih]= new TGraphErrors(NC,Cent,vn_EvtPlQvec[ih],eCent,vn_obs_ERROR[ih]); //add error here
+	}
+	//Fill graphs I drew in the sktech
+	double px[NH] = {0.};
+	double pxe[NH] = {0.};
+	for (int ih=0; ih<NH; ih++){px[ih]=ih;pxe[ih]=0.;}
+
+		
+
+	for (int ic=0; ic<NC; ic++) gr_pvn[ic][0]= new TGraphErrors(NH,px,pvn_EvtPl[ic],pxe,pMeanArrayEvtPlError[ic]); //add error here
+	for (int ic=0; ic<NC; ic++) gr_pvn[ic][1]= new TGraphErrors(NH,px,pvn_TwoPart[ic],pxe,pvn_TwoPartError[ic]); //add error here
+	for (int ic=0; ic<NC; ic++) gr_pvn[ic][2]= new TGraphErrors(NH,px,pvn_EvtPlQvec[ic],pxe,pvn_obs_ERROR[ic]); //add error here
+		
+		for(int i=0; i<NMethod; i++){
+			for (int ih=0; ih<NH; ih++){
+				gr_vn_cent[i][ih]->SetTitle(Form("Centrality dependence %s Method", gr_Names[i].Data()));
+				gr_vn_cent[i][ih]->Write(Form("gr_v%02d_%s_cent",ih+1, gr_Names[i].Data()));
+			}
+			for (int ic=0; ic<NC; ic++){
+				gr_pvn[ic][i]->SetTitle(Form("n dependence %s Method", gr_Names[i].Data()));
+				gr_pvn[ic][i]->Write(Form("gr_pv%02d_%s",ic+1, gr_Names[i].Data()));
+			}
+		}
+	}
+
+void SaveToRootfile()
