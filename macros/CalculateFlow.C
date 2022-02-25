@@ -15,6 +15,7 @@
 
 using namespace std;
 
+int NPhiHist = 12; // Number of events for event-by-event phi dist.
 //Input Histograms from ToyMCFlowAO.C
 TH1D *hPhiPsi[NH][NC]; //phi-psi_n (symmetry plane)
 TH1D *hPhiPsiQ[NH][NC]; // Q vector (event plane)
@@ -39,6 +40,7 @@ void SaveToRootfile(TString outputfile);
 void CalculateFlow(TString inputfilename,TString outputfilename){
 	LoadData(inputfilename);
 	Calculate();
+	SaveToRootfile(outputfilename);
 }
 
 
@@ -48,7 +50,19 @@ void LoadData(TString inputfile){
 	for(int ic=0; ic<NC; ic++){
 		hDeltaPhiSum[ic]=(TH1D*)fIn->Get(Form("hDeltaPhiSum_C%02d",ic));
 		hDeltaPhiSum[ic]->Rebin(2);
-		for()
+		for(int ih=0; ih<NH; ih++){
+			hPhiPsi[ih][ic]=(TH1D*)fIn->Get(Form("hPhiPsiC%02dH%02d",ic,ih+1));
+			hPhiPsiQ[ih][ic]=(TH1D*)fIn->Get(Form("hPhiPsiQC%02dH%02d",ic,ih+1));
+			hEventPlane[ih][ic]=(TH1D*)fIn->Get(Form("hEventPlaneC%02dH%02d",ic,ih+1));
+			hEventPlaneEP[ih][ic]=(TH1D*)fIn->Get(Form("hEventPlaneEPC%02dH%02d",ic,ih+1));
+			hTPcosDeltaPhi[ih][ic]=(TH1D*)fIn->Get(Form("hTPcosDeltaPhiC%02dH%02d",ic,ih+1));
+			hResolution[ih][ic]=(TH1D*)fIn->Get(Form("hResolutionC%02dH%02d",ic,ih+1));
+			hResolutionDist[ih][ic]=(TH1D*)fIn->Get(Form("hResolutionDistC%02dH%02d",ic,ih+1));
+			hResolutionDistA[ih][ic]=(TH1D*)fIn->Get(Form("hResolutionDistAC%02dH%02d",ic,ih+1));
+		}
+		for(int ie=0; ie<NPhiHist; ie++){
+			hPhiEvent[ie][ic]=(TH1D*)fIn->Get(Form("hPhiEvent_C%02d_E%02d",ic,(iPhiEvt+1)));
+		}
 	}
 
 }
@@ -147,4 +161,9 @@ void Calculate(){
 		}
 	}
 
-void SaveToRootfile()
+void SaveToRootfile(TString outputfilename){
+	TFile *output = new TFile(outputfilename, "recreate");
+	//Should write graphs to file here
+	output->Write();
+	output->Close();
+}
