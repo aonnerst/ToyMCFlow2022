@@ -145,10 +145,11 @@ void Calculate(){
 
 		
 
-	for (int ic=0; ic<NC; ic++) gr_pvn[ic][0]= new TGraphErrors(NH,px,pvn_EvtPl[ic],pxe,pMeanArrayEvtPlError[ic]); //add error here
-	for (int ic=0; ic<NC; ic++) gr_pvn[ic][1]= new TGraphErrors(NH,px,pvn_TwoPart[ic],pxe,pvn_TwoPartError[ic]); //add error here
-	for (int ic=0; ic<NC; ic++) gr_pvn[ic][2]= new TGraphErrors(NH,px,pvn_EvtPlQvec[ic],pxe,pvn_obs_ERROR[ic]); //add error here
-		
+	for (int ic=0; ic<NC; ic++) {
+		gr_pvn[ic][0]= new TGraphErrors(NH,px,pvn_EvtPl[ic],pxe,pMeanArrayEvtPlError[ic]); //add error here
+		gr_pvn[ic][1]= new TGraphErrors(NH,px,pvn_TwoPart[ic],pxe,pvn_TwoPartError[ic]); //add error here
+		gr_pvn[ic][2]= new TGraphErrors(NH,px,pvn_EvtPlQvec[ic],pxe,pvn_obs_ERROR[ic]); //add error here
+	}
 		for(int i=0; i<NMethod; i++){
 			for (int ih=0; ih<NH; ih++){
 				gr_vn_cent[i][ih]->SetTitle(Form("Centrality dependence %s Method", gr_Names[i].Data()));
@@ -159,10 +160,18 @@ void Calculate(){
 				gr_pvn[ic][i]->Write(Form("gr_pv%02d_%s",ic+1, gr_Names[i].Data()));
 			}
 		}
-	}
+
+}
+
 
 void SaveToRootfile(TString outputfilename){
 	TFile *output = new TFile(outputfilename, "recreate");
+	output->cd();
+	
+	/*gr_vn_cent->Write();
+	gr_pvn->Write();
+	hPhiEvent->Write();
+	hTPcosDeltaPhi[n][ic]->Write();*/
 	//Should write graphs to file here
 	output->Write();
 	output->Close();

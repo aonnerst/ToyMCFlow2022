@@ -24,7 +24,7 @@ int main(int argc, char **argv)
 
 	if ( argc<4 ) {
 		cout<<"+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"<<endl;
-		cout<<"+  "<<argv[0]<<" <outputFile> <Nevt> <random seed> <bgfrac>"<<endl;
+		cout<<"+  "<<argv[0]<<" <outputFile> <Nevt> <random seed> <bgfrac> <bNUE>"<<endl;
 		cout << endl << endl;
 		exit(1);
 	}
@@ -33,109 +33,115 @@ int main(int argc, char **argv)
 	char *outFile = argv[1];
 	Int_t Nevt= atoi(argv[2]);
 	Int_t random_seed = atoi(argv[3]);
-    Int_t bgfrac = atoi(argv[4]); //
-    TRandom *myRandom = new TRandom(random_seed);
+	Int_t bgfrac = atoi(argv[4]);
+	Int_t bNUE = atoi(argv[5]); //
+	TRandom *myRandom = new TRandom(random_seed);
 	// Declare variables
-    cout<< strCentrality[0]<<endl;
+	cout<< strCentrality[0]<<endl;
 
-    Int_t NPhiHist = 12; // Number of events for event-by-event phi dist.
-    
+	Int_t NPhiHist = 12; // Number of events for event-by-event phi dist.
 
-    TFile *output = new TFile(outFile,"recreate");
-    output->cd();
+
+	TFile *output = new TFile(outFile,"recreate");
+	output->cd();
 
 	//Define uniform function for option B
-    TF1 *centSamp = new TF1("centSamp", "[0]",0.0,0.9);
-    centSamp->SetParameter(0,1.0);
+	TF1 *centSamp = new TF1("centSamp", "[0]",0.0,0.9);
+	centSamp->SetParameter(0,1.0);
 
 
 
 	//Define histogram for option B ------------------------------------------------
-    TH1D *hCentSample = new TH1D("hCentSample","hCentSample",3,-0.1,2.1);
+	TH1D *hCentSample = new TH1D("hCentSample","hCentSample",3,-0.1,2.1);
 
-    TH1D *hPhiPsi[NH][NC]; //phi-psi_n (symmetry plane)
-    TH1D *hPhiPsiQ[NH][NC]; // Q vector (event plane)
-    TH1D *hEventPlane[NH][NC]; //single particle delta phi hist phi-psi_n (symmetry plane)
-    TH1D *hEventPlaneEP[NH][NC]; // single particle delta phi hist Q vector (event plane)
-    TH1D *hTPcosDeltaPhi[NH][NC]; // two particle delta phi ( phi_i-phi_j)
-    TH1D *hPhiEvent[NPhiHist][NC]; // Event-by-event phi 
-    TH1D *hResolution[NH][NC];
-    TH1D *hResolutionDist[NH][NC];
-    TH1D *hResolutionDistA[NH][NC];
-    
+	TH1D *hPhiPsi[NH][NC]; //phi-psi_n (symmetry plane)
+	TH1D *hPhiPsiQ[NH][NC]; // Q vector (event plane)
+	TH1D *hEventPlane[NH][NC]; //single particle delta phi hist phi-psi_n (symmetry plane)
+	TH1D *hEventPlaneEP[NH][NC]; // single particle delta phi hist Q vector (event plane)
+	TH1D *hTPcosDeltaPhi[NH][NC]; // two particle delta phi ( phi_i-phi_j)
+	TH1D *hPhiEvent[NPhiHist][NC]; // Event-by-event phi 
+	TH1D *hResolution[NH][NC];
+	TH1D *hResolutionDist[NH][NC];
+	TH1D *hResolutionDistA[NH][NC];
+	TH1D *hrandomBgUni = new TH1D("hrandomBgUni","hrandomBgUni",200, 0.0, 2.0*TMath::Pi());
+
+	TF1 *uniform[NH]; // uniform distribution of psi for each harmonic
 	//range 0 to 2*pi
-    for (Int_t ih=0; ih<NH; ih++){
+	for (Int_t ih=0; ih<NH; ih++){
 
 		//------Symmetry planes random ------
-    	uniform[ih]= new TF1(Form("uniform%02d",ih+1),"[0]", -1*TMath::Pi()/(ih+1), 1.0*TMath::Pi()/(ih+1));
-    	uniform[ih]->SetParameter(0,1.);
+		uniform[ih]= new TF1(Form("uniform%02d",ih+1),"[0]", -1*TMath::Pi()/(ih+1), 1.0*TMath::Pi()/(ih+1));
+		uniform[ih]->SetParameter(0,1.);
 
-    	for (Int_t ic=0; ic<NC; ic++){
+		for (Int_t ic=0; ic<NC; ic++){
 			//-----Histograms---------
-    		hEventPlane[ih][ic]     = new TH1D(Form("hEventPlaneC%02dH%02d",ic,ih+1),Form("n=%d,%s",ih+1,strCentrality[ic].Data()),200,-1.0, 1.0);
-    		hEventPlaneEP[ih][ic]   = new TH1D(Form("hEventPlaneEPC%02dH%02d",ic,ih+1),Form("n=%d,%s",ih+1,strCentrality[ic].Data()),200,-1.0, 1.0);
-    		hTPcosDeltaPhi[ih][ic]    = new TH1D(Form("hTPcosDeltaPhiC%02dH%02d",ic,ih+1),Form("n=%d,%s",ih+1,strCentrality[ic].Data()),200,-1.0, 1.0);
-    		hPhiPsi[ih][ic]         = new TH1D(Form("hPhiPsiC%02dH%02d",ic,ih+1),Form("n=%d,%s",ih+1,strCentrality[ic].Data()),200,0.0, 2.0*TMath::Pi());
-    		hPhiPsiQ[ih][ic]        = new TH1D(Form("hPhiPsiQC%02dH%02d",ic,ih+1),Form("n=%d,%s",ih+1,strCentrality[ic].Data()),200,0.0, 2.0*TMath::Pi());
-    		hResolution[ih][ic]     = new TH1D(Form("hResolutionC%02dH%02d",ic,ih+1),Form("n=%d,%s",ih+1,strCentrality[ic].Data()),200,-100, 100);
-    		hResolutionDist[ih][ic] = new TH1D(Form("hResolutionDistC%02dH%02d",ic,ih+1),Form("n=%d,%s",ih+1,strCentrality[ic].Data()),200,-10, 10);
-    		hResolutionDistA[ih][ic]= new TH1D(Form("hResolutionDistAC%02dH%02d",ic,ih+1),Form("n=%d,%s",ih+1,strCentrality[ic].Data()),200,-10, 10);
-    	}
+			hEventPlane[ih][ic]     = new TH1D(Form("hEventPlaneC%02dH%02d",ic,ih+1),Form("n=%d,%s",ih+1,strCentrality[ic].Data()),200,-1.0, 1.0);
+			hEventPlaneEP[ih][ic]   = new TH1D(Form("hEventPlaneEPC%02dH%02d",ic,ih+1),Form("n=%d,%s",ih+1,strCentrality[ic].Data()),200,-1.0, 1.0);
+			hTPcosDeltaPhi[ih][ic]    = new TH1D(Form("hTPcosDeltaPhiC%02dH%02d",ic,ih+1),Form("n=%d,%s",ih+1,strCentrality[ic].Data()),200,-1.0, 1.0);
+			hPhiPsi[ih][ic]         = new TH1D(Form("hPhiPsiC%02dH%02d",ic,ih+1),Form("n=%d,%s",ih+1,strCentrality[ic].Data()),200,0.0, 2.0*TMath::Pi());
+			hPhiPsiQ[ih][ic]        = new TH1D(Form("hPhiPsiQC%02dH%02d",ic,ih+1),Form("n=%d,%s",ih+1,strCentrality[ic].Data()),200,0.0, 2.0*TMath::Pi());
+			hResolution[ih][ic]     = new TH1D(Form("hResolutionC%02dH%02d",ic,ih+1),Form("n=%d,%s",ih+1,strCentrality[ic].Data()),200,-100, 100);
+			hResolutionDist[ih][ic] = new TH1D(Form("hResolutionDistC%02dH%02d",ic,ih+1),Form("n=%d,%s",ih+1,strCentrality[ic].Data()),200,-10, 10);
+			hResolutionDistA[ih][ic]= new TH1D(Form("hResolutionDistAC%02dH%02d",ic,ih+1),Form("n=%d,%s",ih+1,strCentrality[ic].Data()),200,-10, 10);
+		}
 
 
-    }
+	}
 
-    TH1D *hDeltaPhiSum[NC];
-    for (Int_t ic=0; ic<NC; ic++){
-    	hDeltaPhiSum[ic] = new TH1D(Form("hDeltaPhiSum_C%02d",ic),Form("%s",strCentrality[ic].Data()),200, 0.0, 2.0*TMath::Pi());
-    }
+	TH1D *hDeltaPhiSum[NC];
+	for (Int_t ic=0; ic<NC; ic++){
+		hDeltaPhiSum[ic] = new TH1D(Form("hDeltaPhiSum_C%02d",ic),Form("%s",strCentrality[ic].Data()),200, 0.0, 2.0*TMath::Pi());
+	}
 
-    for (Int_t iPhiEvt=0; iPhiEvt<NPhiHist; iPhiEvt++){
-    	for (Int_t ic=0; ic<NC; ic++){
-    		hPhiEvent[iPhiEvt][ic] = new TH1D(Form("hPhiEvent_C%02d_E%02d",ic,(iPhiEvt+1)),Form("Event=%02d,%s",(iPhiEvt+1),strCentrality[ic].Data()),100,0.0, 2.0*TMath::Pi());
-    	}
-    }
-    //--------------------------End of histogram ---------------------------------------------------
+	for (Int_t iPhiEvt=0; iPhiEvt<NPhiHist; iPhiEvt++){
+		for (Int_t ic=0; ic<NC; ic++){
+			hPhiEvent[iPhiEvt][ic] = new TH1D(Form("hPhiEvent_C%02d_E%02d",ic,(iPhiEvt+1)),Form("Event=%02d,%s",(iPhiEvt+1),strCentrality[ic].Data()),100,0.0, 2.0*TMath::Pi());
+		}
+	}
+//--------------------------End of histogram ---------------------------------------------------
 
-    //-----------------------------Generating pdfs--------------------------------------
-    //signal
-    TString strformula = "[0]*(1";
-    for (Int_t ih=0; ih<NH; ih++){
-    	strformula += Form("+2*[%d]*TMath::Cos(%d*(x-[%d]))",ih+1,ih+1,NH+ih+1);
-    }
-    strformula+=")";
-    cout<<strformula<<endl;
+//-----------------------------Generating pdfs--------------------------------------
+	//signal
+	TString strformula = "[0]*(1";
+	for (Int_t ih=0; ih<NH; ih++){
+		strformula += Form("+2*[%d]*TMath::Cos(%d*(x-[%d]))",ih+1,ih+1,NH+ih+1);
+	}
+	strformula+=")";
+	cout<<strformula<<endl;
 
-    TF1 *fourier = new TF1("Fourier", strformula, 0.0, 2.0*TMath::Pi());
+	TF1 *fourier = new TF1("Fourier", strformula, 0.0, 2.0*TMath::Pi());
 	//background
-    TF1 *bgUniform = new TF1("bgUniform","[0]",0.0, 2.0*TMath::Pi());
-    bgUniform->SetParameter(0,50.0);
-    TF1 *uniform[NH]; // uniform distribution of psi for each harmonic
-    //---------------------------End of generating pdfs-------------------------------------
-    
-    int ieout = Nevt/20;
-    if (ieout<1) ieout=1;
-    TStopwatch timer;
-    timer.Start();
-    //initializing necessary variables
-    Double_t Psi_n[NH]={0.0};// symmetry plane angle
+	TF1 *bgUniform = new TF1("bgUniform","[0]",0.0, 2.0*TMath::Pi());
+	bgUniform->SetParameter(0,50.0);
 
-    Double_t weightQ = 1.0;// weight for Q-vector
+	//background with two gaps in phi
+	TF1 *fbgNUE = new TF1("bgGap","[0]*(1-(x > 1.65)*(x < 2.2)*0.5-(x > 0.3)*(x < 0.4)*0.7)",0.0,2.0*TMath::Pi());
+	fbgNUE->SetParameter(0,50.0);
+	//---------------------------End of generating pdfs-------------------------------------
+    
+	int ieout = Nevt/20;
+	if (ieout<1) ieout=1;
+	TStopwatch timer;
+	timer.Start();
+	//initializing necessary variables
+	Double_t Psi_n[NH]={0.0};// symmetry plane angle
+
+	Double_t weightQ = 1.0;// weight for Q-vector
 
 	//Event loop
-    for (Int_t iEvent=0; iEvent<Nevt; iEvent++)
-    {
-    	if(iEvent % ieout == 0) { cout << iEvent << "\t" << int(float(iEvent)/Nevt*100) << "%" << endl ;}
+	for (Int_t iEvent=0; iEvent<Nevt; iEvent++)
+	{
+		if(iEvent % ieout == 0) { cout << iEvent << "\t" << int(float(iEvent)/Nevt*100) << "%" << endl ;}
 		//--------Sample randomly from centSamp---------
-    	Double_t dice = centSamp->GetRandom();
-    	Int_t Nch=0;
-    	Int_t ic=0;
-    	if(dice>= 0.0 && dice<0.3) ic=0;
-    	if(dice>=0.3 && dice<0.6) ic=1;
-    	if(dice>=0.6 && dice<=0.9) ic=2;
-    	hCentSample->Fill(ic);
-    	//-----------End of random sampling of centrality-------------
-    	Nch=inputNch[ic];
+		Double_t dice = centSamp->GetRandom();
+		Int_t Nch=0;
+		Int_t ic=0;
+		if(dice>= 0.0 && dice<0.3) ic=0;
+		if(dice>=0.3 && dice<0.6) ic=1;
+		if(dice>=0.6 && dice<=0.9) ic=2;
+		hCentSample->Fill(ic);
+		//-----------End of random sampling of centrality-------------
+		Nch=inputNch[ic];
 		//Get Psi for different harmonics
 		for (Int_t n=0; n<NH; n++) Psi_n[n]=uniform[n]->GetRandom();//harmonic loop
 		// Setting parameter values of pdf
@@ -145,10 +151,19 @@ int main(int argc, char **argv)
 		//-----End of setting parameter values------------------
 			if(iEvent<NPhiHist)fourier->Write(Form("fourierC%02d_E%02d",ic,iEvent));
 		//-----------Putting particle into vector----------------
-    	vector <double> phiarray; //pharray is now vector
+		vector <double> phiarray; //pharray is now vector
 		for (Int_t t=0; t<Nch; t++) phiarray.push_back(fourier->GetRandom()); // generating signal
 			Int_t N_bg = Nch*bgfrac;
-		for (Int_t t=0; t<N_bg; t++) phiarray.push_back(bgUniform->GetRandom()); //generating background
+		for (Int_t t=0; t<N_bg; t++){ //generating background
+			if(bNUE){
+				phiarray.push_back(bgUniform->GetRandom()); // if bNUE'is kTRUE
+			} 
+
+			if(!bNUE){
+				phiarray.push_back(fbgNUE->GetRandom()); // if bNUE is ḱFALSE
+			}
+			
+		} 
 		//-----------End of particles into vector-------------
 		Int_t N_tot = phiarray.size(); // getting total amount of tracks
 		//Initializing 
@@ -213,7 +228,7 @@ int main(int argc, char **argv)
 }
 //---------Member function---------
 double DeltaPhi(double phi1, double phi2) {
-  // dphi
+	// dphi
 	double res =  atan2(sin(phi1-phi2), cos(phi1-phi2));
 	return res>0 ? res : 2.*TMath::Pi()+res ;
 }
