@@ -33,9 +33,8 @@ int main(int argc, char **argv)
 	char *outFile = argv[1];
 	Int_t Nevt= atoi(argv[2]);
 	Int_t random_seed = atoi(argv[3]);
-	Int_t bgfrac = atoi(argv[4]);
+	Double_t bgfrac = atof(argv[4]);
 	Int_t bNUE = atoi(argv[5]); //
-	TRandom *myRandom = new TRandom(random_seed);
 	// Declare variables
 	cout<< strCentrality[0]<<endl;
 
@@ -63,7 +62,10 @@ int main(int argc, char **argv)
 	TH1D *hResolution[NH][NC];
 	TH1D *hResolutionDist[NH][NC];
 	TH1D *hResolutionDistA[NH][NC];
-	TH1D *hrandomBgUni = new TH1D("hrandomBgUni","hrandomBgUni",200, 0.0, 2.0*TMath::Pi());
+	TH1D *hBgPhi = new TH1D("hBgPhi","hBgPhi",200, 0.0, 2.0*TMath::Pi()); 
+	TH1D *hSignalPhi = new TH1D("hSignalPhi","hSignalPhi",200, 0.0, 2.0*TMath::Pi());
+	TH1D *hInclusivePhi = new TH1D("hInclusivePhi","hInclusivePhi",200, 0.0, 2.0*TMath::Pi());
+	
 
 	TF1 *uniform[NH]; // uniform distribution of psi for each harmonic
 	//range 0 to 2*pi
@@ -92,7 +94,7 @@ int main(int argc, char **argv)
 	for (Int_t ic=0; ic<NC; ic++){
 		hDeltaPhiSum[ic] = new TH1D(Form("hDeltaPhiSum_C%02d",ic),Form("%s",strCentrality[ic].Data()),200, 0.0, 2.0*TMath::Pi());
 	}
-
+	//event-by-event
 	for (Int_t iPhiEvt=0; iPhiEvt<NPhiHist; iPhiEvt++){
 		for (Int_t ic=0; ic<NC; ic++){
 			hPhiEvent[iPhiEvt][ic] = new TH1D(Form("hPhiEvent_C%02d_E%02d",ic,(iPhiEvt+1)),Form("Event=%02d,%s",(iPhiEvt+1),strCentrality[ic].Data()),100,0.0, 2.0*TMath::Pi());
@@ -112,11 +114,16 @@ int main(int argc, char **argv)
 	TF1 *fourier = new TF1("Fourier", strformula, 0.0, 2.0*TMath::Pi());
 	//background
 	TF1 *bgUniform = new TF1("bgUniform","[0]",0.0, 2.0*TMath::Pi());
-	bgUniform->SetParameter(0,50.0);
+	bgUniform->SetParameter(0,1.0);
 
 	//background with two gaps in phi
-	TF1 *fbgNUE = new TF1("bgGap","[0]*(1-(x > 1.65)*(x < 2.2)*0.5-(x > 0.3)*(x < 0.4)*0.7)",0.0,2.0*TMath::Pi());
-	fbgNUE->SetParameter(0,50.0);
+	TF1 *fNUE = new TF1("bgGap","[0]*(1-(x > 1.65)*(x < 2.2)*0.5-(x > 0.3)*(x < 0.4)*0.7)",0.0,2.0*TMath::Pi());
+	fNUE->SetParameter(0,1.0);
+	//-------Random number needed for removal
+	TRandom3 *prng = new TRandom3(random_seed);
+	gRandom->SetSeed(random_seed);
+	
+	
 	//---------------------------End of generating pdfs-------------------------------------
     
 	int ieout = Nevt/20;
@@ -125,8 +132,6 @@ int main(int argc, char **argv)
 	timer.Start();
 	//initializing necessary variables
 	Double_t Psi_n[NH]={0.0};// symmetry plane angle
-
-	Double_t weightQ = 1.0;// weight for Q-vector
 
 	//Event loop
 	for (Int_t iEvent=0; iEvent<Nevt; iEvent++)
@@ -145,59 +150,74 @@ int main(int argc, char **argv)
 		//Get Psi for different harmonics
 		for (Int_t n=0; n<NH; n++) Psi_n[n]=uniform[n]->GetRandom();//harmonic loop
 		// Setting parameter values of pdf
-			fourier->SetParameter(0,Nch); 
-		for (Int_t i=0; i<NH-1; i++)fourier->SetParameter(i+1,inputVn[i][ic]); //Setting the vn parameters
-		for (Int_t i=NH; i<2*NH; i++)fourier->SetParameter(i+1,Psi_n[i-NH]); //Setting the Psi parameters
+		fourier->SetParameter(0,Nch); 
+		for (Int_t i=0; i<NH-1; i++){
+			fourier->SetParameter(i+1,inputVn[i][ic]); //Setting the vn parameters
+		}
+		for (Int_t i=NH; i<2*NH; i++){
+			fourier->SetParameter(i+1,Psi_n[i-NH]); //Setting the Psi parameters
+		}
 		//-----End of setting parameter values------------------
-			if(iEvent<NPhiHist)fourier->Write(Form("fourierC%02d_E%02d",ic,iEvent));
+			if(iEvent<NPhiHist){
+				fourier->Write(Form("fourierC%02d_E%02d",ic,iEvent));
+			}
 		//-----------Putting particle into vector----------------
 		vector <double> phiarray; //pharray is now vector
-		for (Int_t t=0; t<Nch; t++) phiarray.push_back(fourier->GetRandom()); // generating signal
-			Int_t N_bg = Nch*bgfrac;
-		for (Int_t t=0; t<N_bg; t++){ //generating background
-			if(bNUE){
-				phiarray.push_back(bgUniform->GetRandom()); // if bNUE'is kTRUE
-			} 
-
-			if(!bNUE){
-				phiarray.push_back(fbgNUE->GetRandom()); // if bNUE is ḱFALSE
-			}
+		double phi = -999.;
+		for (Int_t t=0; t<Nch; t++){
+			phi=fourier->GetRandom();
+			if(prng->Uniform(0,1) > fNUE->Eval(phi,0,0))//For a 1-d function give y=0 and z=0 
+				continue;
 			
+			phiarray.push_back(phi); // generating signal
+			hSignalPhi->Fill(phi); 
+		}
+		Int_t N_bg = Nch*bgfrac;
+		for (Int_t t=0; t<N_bg; t++){ //generating background
+			phi = bgUniform->GetRandom();
+			if(prng->Uniform(0,1) > fNUE->Eval(phi,0,0))//For a 1-d function give y=0 and z=0 
+				continue;
+			phiarray.push_back(phi); // if bNUE'is kTRUE
+			hBgPhi->Fill(phi); 
+
 		} 
-		//-----------End of particles into vector-------------
+		//-----------end of removal of particles------------------
 		Int_t N_tot = phiarray.size(); // getting total amount of tracks
 		//Initializing 
 		Double_t Qn_x[NH] = {0.0};//Should be 0 since we sum the qvectors
 		Double_t Qn_y[NH] = {0.0};//
 		TComplex QvectorsEP[NH];
 		Double_t Psi_n_EP[NH]={0.0};
-		Double_t Psi_n_EPQ[NH]={0.0};
 		Double_t AngleDiff[NH]={0.0};
 		for(int iH=0;iH<NH;iH++) QvectorsEP[iH] = TComplex(0,0);
+		//Declareing correction NUE factor
+		Double_t corrNUE= 1.;
 		for (Int_t t=0; t<N_tot; t++)//track loop
 		{
+			corrNUE = 1./fNUE->Eval(phiarray[t],0,0);
 			if(iEvent<NPhiHist) {
 				hPhiEvent[iEvent][ic]->Fill(phiarray[t]);
 			}
+			hInclusivePhi->Fill(phiarray[t]);
 			//Harmonic loop
 			for (Int_t n=0; n<NH; n++)
 			{
 				hPhiPsi[n][ic]->Fill(DeltaPhi(phiarray[t],Psi_n[n]));
-				hEventPlane[n][ic]->Fill(TMath::Cos((n+1)*(DeltaPhi(phiarray[t], Psi_n[n]))));
+				hEventPlane[n][ic]->Fill(corrNUE*TMath::Cos((n+1)*(DeltaPhi(phiarray[t], Psi_n[n]))));
 				
 				// calculating eventplane with Q-vectors
-				Qn_x[n] += weightQ*TMath::Cos((n+1)*phiarray[t]);
-				Qn_y[n]+= weightQ*TMath::Sin((n+1)*phiarray[t]);
-				QvectorsEP[n] += TComplex(TMath::Cos((n+1)*phiarray[t]),TMath::Sin((n+1)*phiarray[t]));
+				Qn_x[n] += corrNUE*TMath::Cos((n+1)*phiarray[t]);
+				Qn_y[n]+= corrNUE*TMath::Sin((n+1)*phiarray[t]);
+				QvectorsEP[n] += TComplex(corrNUE*TMath::Cos((n+1)*phiarray[t]),corrNUE*TMath::Sin((n+1)*phiarray[t]));
 			}
 		}//End of track loop
 		//Only after the track loop, must sum over the tracks first
 		for (Int_t n=0; n<NH; n++) {
 			Psi_n_EP[n]=(1/double(n+1))*TMath::ATan2(Qn_y[n],Qn_x[n]);
-			Psi_n_EPQ[n] = QvectorsEP[n].Theta()/double(n+1);
 		}
 		//Two Particle correlation
 		for (Int_t i=0; i<N_tot; i++){
+			corrNUE = 1./fNUE->Eval(phiarray[i],0,0);
 			//Evenplane method calculated vn
 			for (Int_t n=0; n<NH; n++) {
 				hEventPlaneEP[n][ic]->Fill(TMath::Cos((n+1)*(DeltaPhi(phiarray[i], Psi_n_EP[n])))); 
@@ -207,7 +227,7 @@ int main(int argc, char **argv)
 				if(i==j) continue;
 				hDeltaPhiSum[ic]->Fill(DeltaPhi(phiarray[i], phiarray[j]));//For fitting
 				for (Int_t n=0; n<NH; n++){
-					hTPcosDeltaPhi[n][ic]->Fill(TMath::Cos((n+1)*(DeltaPhi(phiarray[i], phiarray[j]))));
+					hTPcosDeltaPhi[n][ic]->Fill(corrNUE*TMath::Cos((n+1)*(DeltaPhi(phiarray[i], phiarray[j]))));
 
 				}
 			}		

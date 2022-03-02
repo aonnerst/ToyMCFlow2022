@@ -11,11 +11,11 @@
 #include <TStopwatch.h>
 #include <TComplex.h>
 #include <vector>
-#include "include/toyflowinputs.h"
+#include "../include/toyflowinputs.h"
 
 using namespace std;
 
-int NPhiHist = 12; // Number of events for event-by-event phi dist.
+const int NPhiHist = 12; // Number of events for event-by-event phi dist.
 //Input Histograms from ToyMCFlowAO.C
 TH1D *hPhiPsi[NH][NC]; //phi-psi_n (symmetry plane)
 TH1D *hPhiPsiQ[NH][NC]; // Q vector (event plane)
@@ -32,12 +32,12 @@ const int NMethod=3;
 TGraphErrors *gr_vn_cent[NMethod][NH];
 TGraphErrors *gr_pvn[NC][NMethod];
 TString gr_Names[NMethod]={"SP","TP","EP"};
-void LoadData(TString inputfile);
+void LoadData(TString inputfilename);
 void Calculate();
-void SaveToRootfile(TString outputfile);
+void SaveToRootfile(TString outputfilename);
 
 // Main Function
-void CalculateFlow(TString inputfilename,TString outputfilename){
+void CalculateFlow(TString inputfilename="../flowOutput1000EvtsNobackground.root",TString outputfilename="calculatedVnoutputNoBackground.root"){
 	LoadData(inputfilename);
 	Calculate();
 	SaveToRootfile(outputfilename);
@@ -45,8 +45,8 @@ void CalculateFlow(TString inputfilename,TString outputfilename){
 
 
 //---------------Member functions------------------
-void LoadData(TString inputfile){
-	TFile *fIn = TFile::Open(inputfile);
+void LoadData(TString inputfilename){
+	TFile *fIn = TFile::Open(inputfilename,"read");
 	for(int ic=0; ic<NC; ic++){
 		hDeltaPhiSum[ic]=(TH1D*)fIn->Get(Form("hDeltaPhiSum_C%02d",ic));
 		hDeltaPhiSum[ic]->Rebin(2);
@@ -60,8 +60,9 @@ void LoadData(TString inputfile){
 			hResolutionDist[ih][ic]=(TH1D*)fIn->Get(Form("hResolutionDistC%02dH%02d",ic,ih+1));
 			hResolutionDistA[ih][ic]=(TH1D*)fIn->Get(Form("hResolutionDistAC%02dH%02d",ic,ih+1));
 		}
+
 		for(int ie=0; ie<NPhiHist; ie++){
-			hPhiEvent[ie][ic]=(TH1D*)fIn->Get(Form("hPhiEvent_C%02d_E%02d",ic,(iPhiEvt+1)));
+			hPhiEvent[ie][ic]=(TH1D*)fIn->Get(Form("hPhiEvent_C%02d_E%02d",ic,(ie+1)));
 		}
 	}
 
@@ -167,12 +168,7 @@ void Calculate(){
 void SaveToRootfile(TString outputfilename){
 	TFile *output = new TFile(outputfilename, "recreate");
 	output->cd();
-	
-	/*gr_vn_cent->Write();
-	gr_pvn->Write();
-	hPhiEvent->Write();
-	hTPcosDeltaPhi[n][ic]->Write();*/
-	//Should write graphs to file here
+
 	output->Write();
 	output->Close();
 }
