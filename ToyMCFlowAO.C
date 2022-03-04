@@ -117,7 +117,9 @@ int main(int argc, char **argv)
 	bgUniform->SetParameter(0,1.0);
 
 	//background with two gaps in phi
-	TF1 *fNUE = new TF1("bgGap","[0]*(1-(x > 1.65)*(x < 2.2)*0.5-(x > 0.3)*(x < 0.4)*0.7)",0.0,2.0*TMath::Pi());
+	TString NUEFormula = "[0]*(1-(x > 1.65)*(x < 2.2)*0.5-(x > 0.3)*(x < 0.4)*0.7)";
+	if(!bNUE) NUEFormula="[0]";
+	TF1 *fNUE = new TF1("fNUE",NUEFormula,0.0,2.0*TMath::Pi());
 	fNUE->SetParameter(0,1.0);
 	//-------Random number needed for removal
 	TRandom3 *prng = new TRandom3(random_seed);
@@ -241,7 +243,9 @@ int main(int argc, char **argv)
 			hResolutionDist[n][ic]->Fill(DeltaPhi(Psi_n[n], Psi_n_EP[n]));
 			hResolutionDistA[n][ic]->Fill(Psi_n[n]-Psi_n_EP[n]);
 		}
+
 	}// End of event loop
+	fNUE->Write("fNUE");
 	output->Write();
 	output->Close();
 	timer.Print();

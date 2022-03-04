@@ -32,12 +32,12 @@ const int NMethod=3;
 TGraphErrors *gr_vn_cent[NMethod][NH];
 TGraphErrors *gr_pvn[NC][NMethod];
 TString gr_Names[NMethod]={"SP","TP","EP"};
-void LoadData(TString inputfilename);
+void LoadData(TString inputfile);
 void Calculate();
-void SaveToRootfile(TString outputfilename);
+void SaveToRootfile(TString outputfile);
 
 // Main Function
-void CalculateFlow(TString inputfilename="../flowOutput1000EvtsNobackground.root",TString outputfilename="calculatedVnoutputNoBackground.root"){
+void CalculateFlow(TString inputfilename,TString outputfilename){
 	LoadData(inputfilename);
 	Calculate();
 	SaveToRootfile(outputfilename);
@@ -154,11 +154,10 @@ void Calculate(){
 		for(int i=0; i<NMethod; i++){
 			for (int ih=0; ih<NH; ih++){
 				gr_vn_cent[i][ih]->SetTitle(Form("Centrality dependence %s Method", gr_Names[i].Data()));
-				gr_vn_cent[i][ih]->Write(Form("gr_v%02d_%s_cent",ih+1, gr_Names[i].Data()));
+				
 			}
 			for (int ic=0; ic<NC; ic++){
 				gr_pvn[ic][i]->SetTitle(Form("n dependence %s Method", gr_Names[i].Data()));
-				gr_pvn[ic][i]->Write(Form("gr_pv%02d_%s",ic+1, gr_Names[i].Data()));
 			}
 		}
 
@@ -168,7 +167,14 @@ void Calculate(){
 void SaveToRootfile(TString outputfilename){
 	TFile *output = new TFile(outputfilename, "recreate");
 	output->cd();
-
+	for(int i=0; i<NMethod; i++){
+		for (int ih=0; ih<NH; ih++){
+			gr_vn_cent[i][ih]->Write(Form("gr_v%02d_%s_cent",ih+1, gr_Names[i].Data()));
+		}
+		for (int ic=0; ic<NC; ic++){
+			gr_pvn[ic][i]->Write(Form("gr_pv%02d_%s",ic+1, gr_Names[i].Data()));
+		}
+	}
 	output->Write();
 	output->Close();
 }

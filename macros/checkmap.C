@@ -1,12 +1,30 @@
-TFile *_file0 = TFile::Open("flowOutput1000Evts10background.root")
-new TBrowser
-.q
-TF1 *fNUE = new TF1("bgGap","[0]*(1-(x > 1.65)*(x < 2.2)*0.5-(x > 0.3)*(x < 0.4)*0.7)",0.0,2.0*TMath::Pi())
-fNUE->SetParameter(0,1.0);
-fNUE->Draw()
-TFile *_file0 = TFile::Open("test.root")
-.ls
-hBg->Draw()
-hSignal->Draw()
-.q
+
+TF1 *fNUE;
+TH1D *hBgPhi;
+TH1D *hSignalPhi;
+
+void checkmap(TString input){
+	TFile *fIn= TFile::Open(input);
+	fNUE= (TF1*)fIn->Get("fNUE");
+	hBgPhi = (TH1D*)fIn->Get("hBgPhi");
+	hSignalPhi = (TH1D*)fIn->Get("hSignalPhi");
+
+	TCanvas *can = new TCanvas();
+	can->SetLogy(1);
+	double ymaxsignal = hSignalPhi->GetBinContent(150);
+	double ymaxbg = hBgPhi->GetBinContent(150);
+	fNUE->SetParameter(0,ymaxsignal);
+	fNUE->SetLineColor(kRed);
+	hBgPhi->SetLineColor(kGreen);
+
+	hSignalPhi->Draw();
+	fNUE->Draw("same");
+	hBgPhi->Draw("same");
+	TF1 *fNUEbg=(TF1*)fNUE->Clone();
+	fNUEbg->SetParameter(0,ymaxbg);
+	fNUEbg->SetLineColor(kBlue);
+	fNUEbg->Draw("same");
+	
+}
+
 
