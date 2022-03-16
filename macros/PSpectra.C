@@ -21,18 +21,43 @@ Int_t gMarkers[]= {20,24,21,25,22,26,23,27,32,28};
 Int_t gColors[]={kRed+1, kOrange+2, kCyan+2, kSpring-6, kRed-7, kOrange+1,kCyan-6,kGreen+7,kRed-9,kOrange-9,kAzure+6,kGreen-9};
 Int_t gStyles[]={1,2,3,4,5,6,7,8,9,10};
 const int NMethod=3;
-TGraphErrors *gr_pvn[NC][NMethod];
+const int Nconfigs=3;
+TGraphErrors *gr_pvn[Nconfigs][NC][NMethod];
 TString gr_Names[NMethod]={"SP","TP","EP"};
 Double_t vnIn[NC][NH]={{0.}};
 TGraphErrors *gr_vnin[NC];
 string strHDummy[] = {"2","3","4","5","6","7","8","9","10","11","12"};//vn
+TString ConfigNames[NMethod]={
+	"No BG",
+	//"10 Uniform BG",
+	//"50 Uniform BG",
+	"10 NUE BG",
+	"50 NUE BG",
+};
+TString BGNames[Nbg]={
+	"Uniform",
+	"NUE",
+};
+
+TString rootfiles[]={
+	//"../results/vnOutput_BF00_Uni_9385abc_1000Evts.root ",
+	//"../results/vnOutput_BF10_Uni_9385abc_1000Evts.root ",
+	//"../results/vnOutput_BF50_Uni_9385abc_1000Evts.root ",
+	"../results/vnOutput_BF00_NUE_9385abc_1000Evts.root",
+	"../results/vnOutput_BF10_NUE_9385abc_1000Evts.root",
+	"../results/vnOutput_BF50_NUE_9385abc_1000Evts.root",
+	//"../results/vnOutput_BF00_NUE_weightTest_100Evts3.root",
+	//"../results/vnOutput_BF10_NUE_weightTest_100Evts3.root",
+	//"../results/vnOutput_BF50_NUE_weightTest_100Evts3.root",
+
+};
 
 void LoadData(TString); //Loading TGraphs
 void DrawPSpectra(int);
 void SaveGraphs(int);
 
 //---Main Function------
-void PSpectra(TString infile="../output/toymcflowao_1d0eb42_10k.root")
+void PSpectra()
 {
 	LoadData(infile);
 	for(int ic=0; ic<NC; ic++) {
@@ -42,17 +67,19 @@ void PSpectra(TString infile="../output/toymcflowao_1d0eb42_10k.root")
 }
 
 //------Member Functions-------
-void LoadData(TString inputname)
+void LoadData()
 {
-	TFile *fIn = TFile::Open(inputname,"read");
+	for(int icon=0; icon<Nconfigs; icon++){
+		TFile *fIn = TFile::Open(rootfiles[icon],"read");
 
-	for(int i=0; i<NMethod; i++){
-		for (int ic=0; ic<NC; ic++){
-			gr_pvn[ic][i]=(TGraphErrors*)fIn->Get(Form("gr_pv%02d_%s",ic+1, gr_Names[i].Data()));
-			gr_pvn[ic][i]->Print();
-			gr_pvn[ic][i]->RemovePoint(0);
+		for(int i=0; i<NMethod; i++){
+			for (int ic=0; ic<NC; ic++){
+				gr_pvn[icon][ic][i]=(TGraphErrors*)fIn->Get(Form("gr_pv%02d_%s",ic+1, gr_Names[i].Data()));
+				gr_pvn[icon][ic][i]->Print();
+				gr_pvn[icon][ic][i]->RemovePoint(0);
+			}
 		}
-	}
+	}// end of config loop
 	//for loop for drawing input values
 	for(int ic=0; ic<NC; ic++){
 	  	for (int ih=0; ih<NH; ih++){
@@ -69,9 +96,10 @@ void LoadData(TString inputname)
 		gr_vnin[ic]->Print();
 		gr_vnin[ic]->RemovePoint(0);
 	} 
+	//------end of drawing input values 
 }
 
-void DrawPSpectra(int ic=0)
+void DrawPSpectra(int ic=0, int i=0)
 {
 	gStyle->SetOptStat(0);
 	TCanvas *can = new TCanvas(Form("C%02d",ic),"canvas",1024,740);
@@ -87,24 +115,24 @@ void DrawPSpectra(int ic=0)
   	hset( *hfr, "n+1", "v_{n}",0.7,0.7, 0.07,0.07, 0.01,0.01, 0.03,0.03, 510,505);//settings of the upper pad: x-axis, y-axis
   	//Changelabel(hfr,gr_pvn[0][ic],strHDummy);
   	hfr->Draw();
-  	legend->AddEntry((TObjArray*)NULL,Form("Centrality %s",strCentrality[ic].Data())," ");
+  	legend->AddEntry((TObjArray*)NULL,Form("Centrality %s - %s method",strCentrality[ic].Data(), gr_Names[i].Data())," ");
 
 	gr_vnin[ic]->SetLineColor(kSpring-6);
 	gr_vnin[ic]->SetLineWidth(3);
 	gr_vnin[ic]->Draw("lsame");
 	legend->AddEntry(gr_vnin[ic],"Input","l");
 
-  	for(int i=0; i<NMethod-1; i++){
+  	for(int icon=0; icon<Nconfigs; icon++){
   	
-		gr_pvn[ic][i]->SetLineColor(gColors[i]);
-		gr_pvn[ic][i]->SetMarkerStyle(gMarkers[i]);
-		gr_pvn[ic][i]->SetMarkerColor(gColors[i]);
-		gr_pvn[ic][i]->Draw("plsame");
-		legend->AddEntry(gr_pvn[ic][i],Form("%s", gr_Names[i].Data()),"pl");
+		gr_pvn[icon][ic][i]->SetLineColor(gColors[icon]);
+		gr_pvn[icon][ic][i]->SetMarkerStyle(gMarkers[icon]);
+		gr_pvn[icon][ic][i]->SetMarkerColor(gColors[icon]);
+		gr_pvn[icon][ic][i]->Draw("plsame");
+		legend->AddEntry(gr_pvn[icon][ic][i],Form("%s", ConfigNames[icon].Data()),"pl");
   		
   	}
   	legend -> Draw("same");
-   	gPad->GetCanvas()->SaveAs(Form("../figs/PSpectraC%02d.pdf",ic));
+   	gPad->GetCanvas()->SaveAs(Form("../figs/PSpectraC%02d%s.pdf",ic,gr_Names[i].Data()));
 }
 
 void SaveGraphs(int ic = 0)

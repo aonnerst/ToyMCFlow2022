@@ -4,7 +4,7 @@ const float inputNch[NC] ={1943, 786, 183};
 const int NH = 7; // # of harmonic orders
 //rows: input vn from n=2 to n=7
 //cols: vn for multiplicities from central to peripheral
-const float inputVn[NH][NC] = {
+const double inputVn[NH][NC] = {
 	{0.,0.,0.},
     {0.044325430932513066,0.13409520177544662,0.11868377868652139},
     {0.020319043993158488,0.06147004658105161,0.05440535759432017},

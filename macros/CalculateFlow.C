@@ -31,6 +31,7 @@ TH1D *hDeltaPhiSum[NC];
 const int NMethod=3;
 TGraphErrors *gr_vn_cent[NMethod][NH];
 TGraphErrors *gr_pvn[NC][NMethod];
+TGraphErrors *gr_vn_true[NH];
 TString gr_Names[NMethod]={"SP","TP","EP"};
 void LoadData(TString inputfile);
 void Calculate();
@@ -103,7 +104,7 @@ void Calculate(){
 			//for loop for swapping  vn arrays for vn[ic][n] !transformation!
 
 			vn_TwoPart[n][ic]=TMath::Sqrt(TMath::Abs(MeanArrayTwoParticle[n][ic]));
-			vn_TwoPartError[n][ic]=0.5*TMath::Power(MeanArrayTwoPartError[n][ic],-0.5);//Check error propagation in textbook
+			vn_TwoPartError[n][ic]=0.5*(1.0/(TMath::Power(MeanArrayTwoPartError[n][ic],-0.5)));//Check error propagation in textbook
 			vn_EvtPl[n][ic]=MeanArrayEventPlane[n][ic];
 			vn_EvtPlQvec[n][ic]=MeanArrayEventPlaneQVec[n][ic]/MeanArrayResolution[n][ic];
 			vn_obs_ERROR[n][ic]=TMath::Abs(vn_EvtPlQvec[n][ic])*TMath::Sqrt(TMath::Power(MeanArrayEvtPlErrorQvec[n][ic]/MeanArrayEventPlaneQVec[n][ic],2)+TMath::Power(MeanArrayResolutionError[n][ic]/MeanArrayResolution[n][ic],2));	
@@ -132,7 +133,11 @@ void Calculate(){
 	//Fill graphs I drew in the sktech
 	double Cent[NC] = {0.,1.,2.};
 	double eCent[NC] = {0.,0.,0.};
+	double evntrue[NC] = {0.,0.,0.};
 	
+	for (int ih=0; ih<NH; ih++) {
+		gr_vn_true[ih]= new TGraphErrors(NC,Cent,inputVn[ih],eCent,evntrue); //add error here
+	}
 
 	for (int ih=0; ih<NH; ih++) {
 		gr_vn_cent[0][ih]= new TGraphErrors(NC,Cent,vn_EvtPl[ih],eCent,MeanArrayEvtPlError[ih]); //add error here
@@ -170,6 +175,7 @@ void SaveToRootfile(TString outputfilename){
 	for(int i=0; i<NMethod; i++){
 		for (int ih=0; ih<NH; ih++){
 			gr_vn_cent[i][ih]->Write(Form("gr_v%02d_%s_cent",ih+1, gr_Names[i].Data()));
+			gr_vn_true[ih]->Write(Form("gr_v%02d_true_cent",ih+1));
 		}
 		for (int ic=0; ic<NC; ic++){
 			gr_pvn[ic][i]->Write(Form("gr_pv%02d_%s",ic+1, gr_Names[i].Data()));

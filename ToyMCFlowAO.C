@@ -65,6 +65,7 @@ int main(int argc, char **argv)
 	TH1D *hBgPhi = new TH1D("hBgPhi","hBgPhi",200, 0.0, 2.0*TMath::Pi()); 
 	TH1D *hSignalPhi = new TH1D("hSignalPhi","hSignalPhi",200, 0.0, 2.0*TMath::Pi());
 	TH1D *hInclusivePhi = new TH1D("hInclusivePhi","hInclusivePhi",200, 0.0, 2.0*TMath::Pi());
+	//TH2D *hPhicorrNUE = new TH2D("hPhicorrNUE","hPhicorrNUE",200, 0.0, 2.0*TMath::Pi(),200,0.0,2.0);
 	
 
 	TF1 *uniform[NH]; // uniform distribution of psi for each harmonic
@@ -121,6 +122,9 @@ int main(int argc, char **argv)
 	if(!bNUE) NUEFormula="[0]";
 	TF1 *fNUE = new TF1("fNUE",NUEFormula,0.0,2.0*TMath::Pi());
 	fNUE->SetParameter(0,1.0);
+	TF1 *fInvertedNUE = new TF1("fInvertedNUE","1.0/([0]*(1-(x > 1.65)*(x < 2.2)*0.5))",0.0,2.0*TMath::Pi());
+	fInvertedNUE->SetParameter(0,1.0);
+	TF1 *fAdd = new TF1("fAdd","fNUE*fInvertedNUE");
 	//-------Random number needed for removal
 	TRandom3 *prng = new TRandom3(random_seed);
 	gRandom->SetSeed(random_seed);
@@ -193,10 +197,11 @@ int main(int argc, char **argv)
 		Double_t AngleDiff[NH]={0.0};
 		for(int iH=0;iH<NH;iH++) QvectorsEP[iH] = TComplex(0,0);
 		//Declareing correction NUE factor
-		Double_t corrNUE= 1.;
+		Double_t corrNUEi= 1.; // i is used for single particle
+		Double_t corrNUEj= 1.; //used when correcting two particle
 		for (Int_t t=0; t<N_tot; t++)//track loop
 		{
-			corrNUE = 1./fNUE->Eval(phiarray[t],0,0);
+			corrNUEi = 1./fNUE->Eval(phiarray[t],0,0);
 			if(iEvent<NPhiHist) {
 				hPhiEvent[iEvent][ic]->Fill(phiarray[t]);
 			}
@@ -205,12 +210,12 @@ int main(int argc, char **argv)
 			for (Int_t n=0; n<NH; n++)
 			{
 				hPhiPsi[n][ic]->Fill(DeltaPhi(phiarray[t],Psi_n[n]));
-				hEventPlane[n][ic]->Fill(corrNUE*TMath::Cos((n+1)*(DeltaPhi(phiarray[t], Psi_n[n]))));
+				hEventPlane[n][ic]->Fill(corrNUEi*TMath::Cos((n+1)*(DeltaPhi(phiarray[t], Psi_n[n]))));
 				
 				// calculating eventplane with Q-vectors
-				Qn_x[n] += corrNUE*TMath::Cos((n+1)*phiarray[t]);
-				Qn_y[n]+= corrNUE*TMath::Sin((n+1)*phiarray[t]);
-				QvectorsEP[n] += TComplex(corrNUE*TMath::Cos((n+1)*phiarray[t]),corrNUE*TMath::Sin((n+1)*phiarray[t]));
+				Qn_x[n] += corrNUEi*TMath::Cos((n+1)*phiarray[t]);
+				Qn_y[n]+= corrNUEi*TMath::Sin((n+1)*phiarray[t]);
+				QvectorsEP[n] += TComplex(corrNUEi*TMath::Cos((n+1)*phiarray[t]),corrNUEi*TMath::Sin((n+1)*phiarray[t]));
 			}
 		}//End of track loop
 		//Only after the track loop, must sum over the tracks first
@@ -218,8 +223,18 @@ int main(int argc, char **argv)
 			Psi_n_EP[n]=(1/double(n+1))*TMath::ATan2(Qn_y[n],Qn_x[n]);
 		}
 		//Two Particle correlation
+		double correlation[NH][NC] = {0.0};
+		double weightsProdSum[NH][NC] = {0.0};
+		/*for (Int_t n=0; n<NH; n++)
+		{
+			for (int icent=0; icent<NC; icent++){
+				cout<<" "<<correlation[n][icent]<<" ";
+			}
+			cout<<"\n";
+		}*/
+
 		for (Int_t i=0; i<N_tot; i++){
-			corrNUE = 1./fNUE->Eval(phiarray[i],0,0);
+			corrNUEi = 1./fNUE->Eval(phiarray[i],0,0);
 			//Evenplane method calculated vn
 			for (Int_t n=0; n<NH; n++) {
 				hEventPlaneEP[n][ic]->Fill(TMath::Cos((n+1)*(DeltaPhi(phiarray[i], Psi_n_EP[n])))); 
@@ -227,13 +242,22 @@ int main(int argc, char **argv)
 			}
 			for (Int_t j=0; j<N_tot;j++){
 				if(i==j) continue;
+				corrNUEj = 1./fNUE->Eval(phiarray[j],0,0); // correction for the jth particle
 				hDeltaPhiSum[ic]->Fill(DeltaPhi(phiarray[i], phiarray[j]));//For fitting
-				for (Int_t n=0; n<NH; n++){
-					hTPcosDeltaPhi[n][ic]->Fill(corrNUE*TMath::Cos((n+1)*(DeltaPhi(phiarray[i], phiarray[j]))));
+				for (Int_t n=0; n<NH; n++){// using two correction weights for each phi (phi_i and phi_j)
+					correlation[n][ic] += corrNUEi*corrNUEj*TMath::Cos((n+1)*(DeltaPhi(phiarray[i], phiarray[j])));
+					weightsProdSum[n][ic] += corrNUEi*corrNUEj;
+					//hTPcosDeltaPhi[n][ic]->Fill(corrNUEi*corrNUEj*TMath::Cos((n+1)*(DeltaPhi(phiarray[i], phiarray[j]))));
 
 				}
 			}		
 		}
+		for (Int_t n=0; n<NH; n++)
+		{
+			correlation[n][ic] /= weightsProdSum[n][ic];
+			hTPcosDeltaPhi[n][ic]->Fill(correlation[n][ic]);
+		}
+
 		//Resolution for every event
 		for (Int_t n=0; n<NH; n++)
 		{
@@ -246,6 +270,8 @@ int main(int argc, char **argv)
 
 	}// End of event loop
 	fNUE->Write("fNUE");
+	fInvertedNUE->Write("fInvertedNUE");
+	fAdd->Write("fAdd");
 	output->Write();
 	output->Close();
 	timer.Print();
