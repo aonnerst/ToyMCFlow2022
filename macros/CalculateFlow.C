@@ -21,7 +21,7 @@ TH1D *hPhiPsi[NH][NC]; //phi-psi_n (symmetry plane)
 TH1D *hPhiPsiQ[NH][NC]; // Q vector (event plane)
 TH1D *hEventPlane[NH][NC]; //single particle delta phi hist phi-psi_n (symmetry plane)
 TH1D *hEventPlaneEP[NH][NC]; // single particle delta phi hist Q vector (event plane)
-TH1D *hTPcosDeltaPhi[NH][NC]; // two particle delta phi ( phi_i-phi_j)
+TH1D *h2PCumulantVn[NH][NC]; // two particle delta phi ( phi_i-phi_j)
 TH1D *hPhiEvent[NPhiHist][NC]; // Event-by-event phi 
 TH1D *hResolution[NH][NC];
 TH1D *hResolutionDist[NH][NC];
@@ -56,7 +56,7 @@ void LoadData(TString inputfilename){
 			hPhiPsiQ[ih][ic]=(TH1D*)fIn->Get(Form("hPhiPsiQC%02dH%02d",ic,ih+1));
 			hEventPlane[ih][ic]=(TH1D*)fIn->Get(Form("hEventPlaneC%02dH%02d",ic,ih+1));
 			hEventPlaneEP[ih][ic]=(TH1D*)fIn->Get(Form("hEventPlaneEPC%02dH%02d",ic,ih+1));
-			hTPcosDeltaPhi[ih][ic]=(TH1D*)fIn->Get(Form("hTPcosDeltaPhiC%02dH%02d",ic,ih+1));
+			h2PCumulantVn[ih][ic]=(TH1D*)fIn->Get(Form("h2PCumulantVnC%02dH%02d",ic,ih+1));
 			hResolution[ih][ic]=(TH1D*)fIn->Get(Form("hResolutionC%02dH%02d",ic,ih+1));
 			hResolutionDist[ih][ic]=(TH1D*)fIn->Get(Form("hResolutionDistC%02dH%02d",ic,ih+1));
 			hResolutionDistA[ih][ic]=(TH1D*)fIn->Get(Form("hResolutionDistAC%02dH%02d",ic,ih+1));
@@ -90,8 +90,8 @@ void Calculate(){
 	for (Int_t n=0; n<NH; n++)
 	{
 		for (Int_t ic=0; ic<NC; ic++){
-			MeanArrayTwoParticle[n][ic]=hTPcosDeltaPhi[n][ic]->GetMean();
-			MeanArrayTwoPartError[n][ic]=hTPcosDeltaPhi[n][ic]->GetMeanError();
+			MeanArrayTwoParticle[n][ic]=h2PCumulantVn[n][ic]->GetMean();
+			MeanArrayTwoPartError[n][ic]=h2PCumulantVn[n][ic]->GetMeanError();
 			MeanArrayEventPlane[n][ic]=hEventPlane[n][ic]->GetMean();
 			MeanArrayEvtPlError[n][ic]=hEventPlane[n][ic]->GetMeanError();
 			MeanArrayEventPlaneQVec[n][ic]=hEventPlaneEP[n][ic]->GetMean();
@@ -104,7 +104,7 @@ void Calculate(){
 			//for loop for swapping  vn arrays for vn[ic][n] !transformation!
 
 			vn_TwoPart[n][ic]=TMath::Sqrt(TMath::Abs(MeanArrayTwoParticle[n][ic]));
-			vn_TwoPartError[n][ic]=0.5*(1.0/(TMath::Power(MeanArrayTwoPartError[n][ic],-0.5)));//Check error propagation in textbook
+			vn_TwoPartError[n][ic]=0.5*(1.0/(TMath::Power(MeanArrayTwoParticle[n][ic],0.5))*MeanArrayTwoPartError[n][ic]);
 			vn_EvtPl[n][ic]=MeanArrayEventPlane[n][ic];
 			vn_EvtPlQvec[n][ic]=MeanArrayEventPlaneQVec[n][ic]/MeanArrayResolution[n][ic];
 			vn_obs_ERROR[n][ic]=TMath::Abs(vn_EvtPlQvec[n][ic])*TMath::Sqrt(TMath::Power(MeanArrayEvtPlErrorQvec[n][ic]/MeanArrayEventPlaneQVec[n][ic],2)+TMath::Power(MeanArrayResolutionError[n][ic]/MeanArrayResolution[n][ic],2));	

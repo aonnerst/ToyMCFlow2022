@@ -42,12 +42,12 @@ TGraphErrors *gr_vn_cent[NConfigs][NMethod][NH];
 TGraphErrors *gr_vn_true[NH];
 
 TString rootfiles[]={
-	//"../results/vnOutput_BF00_Uni_9385abc_1000Evts.root ",
-	//"../results/vnOutput_BF10_Uni_9385abc_1000Evts.root ",
-	//"../results/vnOutput_BF50_Uni_9385abc_1000Evts.root ",
-	"../results/vnOutput_BF00_NUE_9385abc_1000Evts.root",
-	"../results/vnOutput_BF10_NUE_9385abc_1000Evts.root",
-	"../results/vnOutput_BF50_NUE_9385abc_1000Evts.root",
+	//"../results/vnOutput_BF00_Uni_362af09_10000Evts_2holes.root",
+	//"../results/vnOutput_BF10_Uni_362af09_10000Evts_2holes.root",
+	//"../results/vnOutput_BF50_Uni_362af09_10000Evts_2holes.root",
+	"../results/vnOutput_BF00_NUE_362af09_10000Evts_2holes.root",
+	"../results/vnOutput_BF10_NUE_362af09_10000Evts_2holes.root",
+	"../results/vnOutput_BF50_NUE_362af09_10000Evts_2holes.root",
 	//"../results/vnOutput_BF00_NUE_weightTest_100Evts3.root",
 	//"../results/vnOutput_BF10_NUE_weightTest_100Evts3.root",
 	//"../results/vnOutput_BF50_NUE_weightTest_100Evts3.root",
@@ -61,8 +61,8 @@ void ConfigCompVn(){
 	LoadGraphs();
 	for (int ih=0; ih<NH; ih++){
 		for(int im=0; im<NMethod; im++){
-			//DrawVnCentConfig(im,0); //Uniform background
-			DrawVnCentConfig(im,1, ih); // uniform background with NUE
+			//DrawVnCentConfig(im,0,ih); //Uniform background
+			DrawVnCentConfig(im,1,ih); // uniform background with NUE
 		}
 	}
 }
@@ -75,6 +75,7 @@ void LoadGraphs(){
 		for(int i=0; i<NMethod; i++){
 			for (int ih=0; ih<NH; ih++){
 				gr_vn_cent[icon][i][ih]=(TGraphErrors*)fIn->Get(Form("gr_v%02d_%s_cent",ih+1, gr_Names[i].Data()));
+				cout<<gr_vn_cent[icon][i][ih]<< endl;
 				gr_vn_true[ih]=(TGraphErrors*)fIn->Get(Form("gr_v%02d_true_cent",ih+1));
 
 			}
@@ -98,9 +99,11 @@ void DrawVnCentConfig(int i = 0, int ib=0, int ih=0) // i = method, ib= what sor
 	legend->SetTextSize(0.04);legend->SetBorderSize(0);legend->SetFillStyle(0);//legend settings;
 	double lowx = -0.5,highx=2.5;
 	double ly=-1.2*TMath::MinElement(NC,gr_vn_true[ih]->GetY()),hy=4.5*TMath::MaxElement(NC,gr_vn_true[ih]->GetY());
+	//double ly=-0.05,hy=0.04;
 	TH2F *hfr = new TH2F("hfr"," ", 100,lowx, highx, 10, ly, hy); // numbers: tics x, low limit x, upper limit x, tics y, low limit y, upper limit y
 	hset( *hfr, "Centrality %", "v_{n}",0.7,0.7, 0.07,0.07, 0.01,0.01, 0.03,0.03, 510,505);//settings of the upper pad: x-axis, y-axis
 	hfr->Draw();
+	
 
 	legend->AddEntry((TObjArray*)NULL,Form("Method %s",gr_Names[i].Data())," ");
 	//legend->AddEntry((TObjArray*)NULL,Form("True value of v_{2}: %s=%0.4f,% s=%0.4f, %s=%0.4f",strCentrality[0].Data(),inputVn[1][0],strCentrality[1].Data(),inputVn[1][1],strCentrality[2].Data(),inputVn[1][2])," ");
@@ -111,10 +114,10 @@ void DrawVnCentConfig(int i = 0, int ib=0, int ih=0) // i = method, ib= what sor
 	gr_vn_true[ih]->SetMarkerColor(gColors[0]);
 	gr_vn_true[ih]->Draw("lpsame");
 	legend->AddEntry(gr_vn_true[ih],Form("n=%d true value", ih+1));
-	
+	cout<<"creating canvas" << endl;
 
 	for(int icon=0; icon<NConfigs; icon++){
-
+		cout<<"getting graphs" << endl;
 		gr_vn_cent[icon][i][ih]->SetLineColor(gColors[icon+1]);
 		gr_vn_cent[icon][i][ih]->SetMarkerStyle(gMarkers[icon+1]);
 		gr_vn_cent[icon][i][ih]->SetMarkerColor(gColors[icon+1]);
@@ -140,6 +143,7 @@ void DrawVnCentConfig(int i = 0, int ib=0, int ih=0) // i = method, ib= what sor
 	p = fpad->GetPad(2);
 	p->SetTickx(); p->SetGridy(0); p->SetLogx(0), p->SetLogy(0); p->cd();
 	TH2F *hfr1 = new TH2F("hfr1"," ", 100, lowx, highx, 10, 0.2*TMath::MinElement(NC,grRatio[0]->GetY()), 1.5*TMath::MaxElement(NC,grRatio[0]->GetY()));
+	//TH2F *hfr1 = new TH2F("hfr1"," ", 100, lowx, highx, 10, 0.0, 2.0);
 	hset( *hfr1, "Centrality %", "Calculations/True value",0.7,0.7, 0.07,0.07, 0.03,0.03, 0.08,0.08, 510,505);
 	hfr1->Draw();
 	for(int ir=0;ir<NConfigs;ir++){

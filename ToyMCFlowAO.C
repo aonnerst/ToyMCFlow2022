@@ -14,8 +14,14 @@
 #include "include/toyflowinputs.h"
 
 using namespace std;
+enum{kK0, kK1, kK2, nKL}; // order
+TComplex QvectorQC[NH][nKL];
 
 double DeltaPhi(double phi1, double phi2); // relative angle
+void CalculateQvectors(vector <double> phiarray, vector <double> phiweight);
+TComplex Q(int n, int p);
+TComplex Two(int n1, int n2 );
+
 
 int main(int argc, char **argv)
 {
@@ -57,7 +63,7 @@ int main(int argc, char **argv)
 	TH1D *hPhiPsiQ[NH][NC]; // Q vector (event plane)
 	TH1D *hEventPlane[NH][NC]; //single particle delta phi hist phi-psi_n (symmetry plane)
 	TH1D *hEventPlaneEP[NH][NC]; // single particle delta phi hist Q vector (event plane)
-	TH1D *hTPcosDeltaPhi[NH][NC]; // two particle delta phi ( phi_i-phi_j)
+	TH1D *h2PCumulantVn[NH][NC]; // cumulant method
 	TH1D *hPhiEvent[NPhiHist][NC]; // Event-by-event phi 
 	TH1D *hResolution[NH][NC];
 	TH1D *hResolutionDist[NH][NC];
@@ -80,7 +86,7 @@ int main(int argc, char **argv)
 			//-----Histograms---------
 			hEventPlane[ih][ic]     = new TH1D(Form("hEventPlaneC%02dH%02d",ic,ih+1),Form("n=%d,%s",ih+1,strCentrality[ic].Data()),200,-1.0, 1.0);
 			hEventPlaneEP[ih][ic]   = new TH1D(Form("hEventPlaneEPC%02dH%02d",ic,ih+1),Form("n=%d,%s",ih+1,strCentrality[ic].Data()),200,-1.0, 1.0);
-			hTPcosDeltaPhi[ih][ic]    = new TH1D(Form("hTPcosDeltaPhiC%02dH%02d",ic,ih+1),Form("n=%d,%s",ih+1,strCentrality[ic].Data()),200,-1.0, 1.0);
+			h2PCumulantVn[ih][ic]    = new TH1D(Form("h2PCumulantVnC%02dH%02d",ic,ih+1),Form("n=%d,%s",ih+1,strCentrality[ic].Data()),200,-1.0, 1.0);
 			hPhiPsi[ih][ic]         = new TH1D(Form("hPhiPsiC%02dH%02d",ic,ih+1),Form("n=%d,%s",ih+1,strCentrality[ic].Data()),200,0.0, 2.0*TMath::Pi());
 			hPhiPsiQ[ih][ic]        = new TH1D(Form("hPhiPsiQC%02dH%02d",ic,ih+1),Form("n=%d,%s",ih+1,strCentrality[ic].Data()),200,0.0, 2.0*TMath::Pi());
 			hResolution[ih][ic]     = new TH1D(Form("hResolutionC%02dH%02d",ic,ih+1),Form("n=%d,%s",ih+1,strCentrality[ic].Data()),200,-100, 100);
@@ -139,6 +145,7 @@ int main(int argc, char **argv)
 	//initializing necessary variables
 	Double_t Psi_n[NH]={0.0};// symmetry plane angle
 
+
 	//Event loop
 	for (Int_t iEvent=0; iEvent<Nevt; iEvent++)
 	{
@@ -168,7 +175,8 @@ int main(int argc, char **argv)
 				fourier->Write(Form("fourierC%02d_E%02d",ic,iEvent));
 			}
 		//-----------Putting particle into vector----------------
-		vector <double> phiarray; //pharray is now vector
+		vector <double> phiarray; //phiarray is now vector
+		vector <double> phiweight; //phiweight is now vector
 		double phi = -999.;
 		for (Int_t t=0; t<Nch; t++){
 			phi=fourier->GetRandom();
@@ -198,10 +206,10 @@ int main(int argc, char **argv)
 		for(int iH=0;iH<NH;iH++) QvectorsEP[iH] = TComplex(0,0);
 		//Declareing correction NUE factor
 		Double_t corrNUEi= 1.; // i is used for single particle
-		Double_t corrNUEj= 1.; //used when correcting two particle
 		for (Int_t t=0; t<N_tot; t++)//track loop
 		{
 			corrNUEi = 1./fNUE->Eval(phiarray[t],0,0);
+			phiweight.push_back(corrNUEi);
 			if(iEvent<NPhiHist) {
 				hPhiEvent[iEvent][ic]->Fill(phiarray[t]);
 			}
@@ -209,6 +217,7 @@ int main(int argc, char **argv)
 			//Harmonic loop
 			for (Int_t n=0; n<NH; n++)
 			{
+				// Analytic Event plane method
 				hPhiPsi[n][ic]->Fill(DeltaPhi(phiarray[t],Psi_n[n]));
 				hEventPlane[n][ic]->Fill(corrNUEi*TMath::Cos((n+1)*(DeltaPhi(phiarray[t], Psi_n[n]))));
 				
@@ -222,42 +231,19 @@ int main(int argc, char **argv)
 		for (Int_t n=0; n<NH; n++) {
 			Psi_n_EP[n]=(1/double(n+1))*TMath::ATan2(Qn_y[n],Qn_x[n]);
 		}
-		//Two Particle correlation
-		double correlation[NH][NC] = {0.0};
-		double weightsProdSum[NH][NC] = {0.0};
-		/*for (Int_t n=0; n<NH; n++)
-		{
-			for (int icent=0; icent<NC; icent++){
-				cout<<" "<<correlation[n][icent]<<" ";
-			}
-			cout<<"\n";
-		}*/
-
-		for (Int_t i=0; i<N_tot; i++){
+		
+		// Start EP
+		for (Int_t i=0; i<N_tot; i++){ //track loop 2
 			corrNUEi = 1./fNUE->Eval(phiarray[i],0,0);
 			//Evenplane method calculated vn
 			for (Int_t n=0; n<NH; n++) {
+				// Q-vector calculated Event plane method using Q-vectors
 				hEventPlaneEP[n][ic]->Fill(TMath::Cos((n+1)*(DeltaPhi(phiarray[i], Psi_n_EP[n])))); 
 				hPhiPsiQ[n][ic]->Fill(DeltaPhi(phiarray[i], Psi_n_EP[n]));
 			}
-			for (Int_t j=0; j<N_tot;j++){
-				if(i==j) continue;
-				corrNUEj = 1./fNUE->Eval(phiarray[j],0,0); // correction for the jth particle
-				hDeltaPhiSum[ic]->Fill(DeltaPhi(phiarray[i], phiarray[j]));//For fitting
-				for (Int_t n=0; n<NH; n++){// using two correction weights for each phi (phi_i and phi_j)
-					correlation[n][ic] += corrNUEi*corrNUEj*TMath::Cos((n+1)*(DeltaPhi(phiarray[i], phiarray[j])));
-					weightsProdSum[n][ic] += corrNUEi*corrNUEj;
-					//hTPcosDeltaPhi[n][ic]->Fill(corrNUEi*corrNUEj*TMath::Cos((n+1)*(DeltaPhi(phiarray[i], phiarray[j]))));
-
-				}
-			}		
-		}
-		for (Int_t n=0; n<NH; n++)
-		{
-			correlation[n][ic] /= weightsProdSum[n][ic];
-			hTPcosDeltaPhi[n][ic]->Fill(correlation[n][ic]);
-		}
-
+			
+		} // end of track-loop 2
+		
 		//Resolution for every event
 		for (Int_t n=0; n<NH; n++)
 		{
@@ -267,7 +253,15 @@ int main(int argc, char **argv)
 			hResolutionDist[n][ic]->Fill(DeltaPhi(Psi_n[n], Psi_n_EP[n]));
 			hResolutionDistA[n][ic]->Fill(Psi_n[n]-Psi_n_EP[n]);
 		}
+		//End EP
 
+		//Start 2P cumulant
+		CalculateQvectors(phiarray,phiweight);
+		for( int n=1; n<NH+1; n++){
+			TComplex sctwo = Two(n, -(n)) / Two(0,0).Re();
+			h2PCumulantVn[n-1][ic]->Fill(sctwo.Re());
+		}
+		
 	}// End of event loop
 	fNUE->Write("fNUE");
 	fInvertedNUE->Write("fInvertedNUE");
@@ -282,3 +276,43 @@ double DeltaPhi(double phi1, double phi2) {
 	double res =  atan2(sin(phi1-phi2), cos(phi1-phi2));
 	return res>0 ? res : 2.*TMath::Pi()+res ;
 }
+
+void CalculateQvectors(vector <double> phiarray, vector <double> phiweight){
+	//initiate qvectors as complex zeroes
+	for(int n=0; n<NH; n++){
+		for(int ik=0; ik<nKL; ++ik){
+			QvectorQC[n][ik] = TComplex(0,0);
+		}
+	} 
+
+	Int_t N_tot = phiarray.size();
+	for (int t=0; t<N_tot; t++){
+		for(int n=0; n<NH; n++){
+			Double_t tf = 1.0;
+			TComplex q[nKL];
+			for(int ik=0; ik<nKL; ik++){
+				q[ik] = TComplex(tf*TMath::Cos((n)*phiarray[t]),tf*TMath::Sin((n)*phiarray[t]));
+				QvectorQC[n][ik] += q[ik];
+				tf *= phiweight[t];
+			}
+		}
+	}
+
+}
+
+TComplex Q(int n, int p){
+	// Return QvectorQC
+	// Q{-n, p} = Q{n, p}*
+	if(n >= 0)
+		return QvectorQC[n][p];
+	return TComplex::Conjugate(QvectorQC[-n][p]);
+}
+
+TComplex Two(int n1, int n2 ){
+	// two-particle correlation <exp[i(n1*phi1 + n2*phi2)]>
+	//	cout << "TWO FUNCTION " << Q(n1,1) << "*" << Q(n2,1) << " - " << Q(n1+n2 , 2) << endl;
+	TComplex two = Q(n1, 1) * Q(n2, 1) - Q( n1+n2, 2);
+	return two;
+}
+
+

@@ -43,26 +43,26 @@ TString rootfiles[]={
 	//"../results/vnOutput_BF00_Uni_9385abc_1000Evts.root ",
 	//"../results/vnOutput_BF10_Uni_9385abc_1000Evts.root ",
 	//"../results/vnOutput_BF50_Uni_9385abc_1000Evts.root ",
-	"../results/vnOutput_BF00_NUE_9385abc_1000Evts.root",
-	"../results/vnOutput_BF10_NUE_9385abc_1000Evts.root",
-	"../results/vnOutput_BF50_NUE_9385abc_1000Evts.root",
+	"../results/vnOutput_BF00_NUE_362af09_10000Evts_2holes.root",
+	"../results/vnOutput_BF10_NUE_362af09_10000Evts_2holes.root",
+	"../results/vnOutput_BF50_NUE_362af09_10000Evts_2holes.root",
 	//"../results/vnOutput_BF00_NUE_weightTest_100Evts3.root",
 	//"../results/vnOutput_BF10_NUE_weightTest_100Evts3.root",
 	//"../results/vnOutput_BF50_NUE_weightTest_100Evts3.root",
 
 };
 
-void LoadData(TString); //Loading TGraphs
+void LoadData(); //Loading TGraphs
 void DrawPSpectra(int);
-void SaveGraphs(int);
+//void SaveGraphs(int);
 
 //---Main Function------
 void PSpectra()
 {
-	LoadData(infile);
+	LoadData();
 	for(int ic=0; ic<NC; ic++) {
 		DrawPSpectra(ic);
-		SaveGraphs(ic);
+		//SaveGraphs(ic);
 	}
 }
 
@@ -134,7 +134,7 @@ void DrawPSpectra(int ic=0, int i=0)
   	legend -> Draw("same");
    	gPad->GetCanvas()->SaveAs(Form("../figs/PSpectraC%02d%s.pdf",ic,gr_Names[i].Data()));
 }
-
+/*
 void SaveGraphs(int ic = 0)
 {
 	TFile *output = new TFile("out_GraphsForRatio.root","recreate");
@@ -143,3 +143,4 @@ void SaveGraphs(int ic = 0)
 	output->Write();
 	output->Close();
 }
+*/
