@@ -34,6 +34,7 @@ TString ConfigNames[NMethod]={
 	"10 NUE BG",
 	"50 NUE BG",
 };
+const int Nbg = 2;
 TString BGNames[Nbg]={
 	"Uniform",
 	"NUE",
@@ -43,9 +44,9 @@ TString rootfiles[]={
 	//"../results/vnOutput_BF00_Uni_9385abc_1000Evts.root ",
 	//"../results/vnOutput_BF10_Uni_9385abc_1000Evts.root ",
 	//"../results/vnOutput_BF50_Uni_9385abc_1000Evts.root ",
-	"../results/vnOutput_BF00_NUE_362af09_10000Evts_2holes.root",
-	"../results/vnOutput_BF10_NUE_362af09_10000Evts_2holes.root",
-	"../results/vnOutput_BF50_NUE_362af09_10000Evts_2holes.root",
+	"../results/vnOutput_BF00_NUE_362af09_100kEvts_2holes.root",
+	"../results/vnOutput_BF10_NUE_362af09_100kEvts_2holes.root",
+	"../results/vnOutput_BF50_NUE_362af09_100kEvts_2holes.root",
 	//"../results/vnOutput_BF00_NUE_weightTest_100Evts3.root",
 	//"../results/vnOutput_BF10_NUE_weightTest_100Evts3.root",
 	//"../results/vnOutput_BF50_NUE_weightTest_100Evts3.root",
@@ -53,7 +54,7 @@ TString rootfiles[]={
 };
 
 void LoadData(); //Loading TGraphs
-void DrawPSpectra(int);
+void DrawPSpectra(int ic=0, int i=0);
 //void SaveGraphs(int);
 
 //---Main Function------
@@ -61,8 +62,11 @@ void PSpectra()
 {
 	LoadData();
 	for(int ic=0; ic<NC; ic++) {
-		DrawPSpectra(ic);
-		//SaveGraphs(ic);
+		for(int i=0; i<NMethod; i++){
+			DrawPSpectra(ic,i);
+			//SaveGraphs(ic);
+		}
+		
 	}
 }
 
@@ -71,9 +75,11 @@ void LoadData()
 {
 	for(int icon=0; icon<Nconfigs; icon++){
 		TFile *fIn = TFile::Open(rootfiles[icon],"read");
-
+		cout<< "config"<<icon<<endl;
 		for(int i=0; i<NMethod; i++){
+			cout<<"method"<< i <<endl;
 			for (int ic=0; ic<NC; ic++){
+				cout<< "centrality"<<ic <<endl;
 				gr_pvn[icon][ic][i]=(TGraphErrors*)fIn->Get(Form("gr_pv%02d_%s",ic+1, gr_Names[i].Data()));
 				gr_pvn[icon][ic][i]->Print();
 				gr_pvn[icon][ic][i]->RemovePoint(0);

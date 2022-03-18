@@ -45,9 +45,9 @@ TString rootfiles[]={
 	//"../results/vnOutput_BF00_Uni_362af09_10000Evts_2holes.root",
 	//"../results/vnOutput_BF10_Uni_362af09_10000Evts_2holes.root",
 	//"../results/vnOutput_BF50_Uni_362af09_10000Evts_2holes.root",
-	"../results/vnOutput_BF00_NUE_362af09_10000Evts_2holes.root",
-	"../results/vnOutput_BF10_NUE_362af09_10000Evts_2holes.root",
-	"../results/vnOutput_BF50_NUE_362af09_10000Evts_2holes.root",
+	"../results/vnOutput_BF00_NUE_362af09_100kEvts_2holes.root",
+	"../results/vnOutput_BF10_NUE_362af09_100kEvts_2holes.root",
+	"../results/vnOutput_BF50_NUE_362af09_100kEvts_2holes.root",
 	//"../results/vnOutput_BF00_NUE_weightTest_100Evts3.root",
 	//"../results/vnOutput_BF10_NUE_weightTest_100Evts3.root",
 	//"../results/vnOutput_BF50_NUE_weightTest_100Evts3.root",
@@ -157,7 +157,7 @@ void DrawVnCentConfig(int i = 0, int ib=0, int ih=0) // i = method, ib= what sor
 		}
 	}
 	
-	gPad->GetCanvas()->SaveAs(Form("../figs/CentDepVn_v%2d_%s_%scorrected.pdf",ih+1,BGNames[ib].Data(),gr_Names[i].Data()));
+	gPad->GetCanvas()->SaveAs(Form("../figs/CentDepVn_v%2d_%s_%s_2Holes.pdf",ih+1,BGNames[ib].Data(),gr_Names[i].Data()));
 }
 
 
