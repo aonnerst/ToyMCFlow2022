@@ -16,6 +16,7 @@
 using namespace std;
 enum{kK0, kK1, kK2, nKL}; // order
 TComplex QvectorQC[NH][nKL];
+bool b2holes = 1;
 
 double DeltaPhi(double phi1, double phi2); // relative angle
 void CalculateQvectors(vector <double> phiarray, vector <double> phiweight);
@@ -124,13 +125,13 @@ int main(int argc, char **argv)
 	bgUniform->SetParameter(0,1.0);
 
 	//background with two gaps in phi
-	TString NUEFormula = "[0]*(1-(x > 1.65)*(x < 2.2)*0.5-(x > 0.3)*(x < 0.4)*0.7)";
+	TString NUEFormula = "[0]*(1-(x > 1.65)*(x < 2.2)*0.5";
+	if(b2holes)NUEFormula+="-(x > 0.3)*(x < 0.4)*0.7";
+	NUEFormula+=")";
 	if(!bNUE) NUEFormula="[0]";
 	TF1 *fNUE = new TF1("fNUE",NUEFormula,0.0,2.0*TMath::Pi());
 	fNUE->SetParameter(0,1.0);
-	TF1 *fInvertedNUE = new TF1("fInvertedNUE","1.0/([0]*(1-(x > 1.65)*(x < 2.2)*0.5))",0.0,2.0*TMath::Pi());
-	fInvertedNUE->SetParameter(0,1.0);
-	TF1 *fAdd = new TF1("fAdd","fNUE*fInvertedNUE");
+	
 	//-------Random number needed for removal
 	TRandom3 *prng = new TRandom3(random_seed);
 	gRandom->SetSeed(random_seed);
