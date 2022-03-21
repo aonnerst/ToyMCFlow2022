@@ -5,7 +5,7 @@ make clean
 
 make
 
-./ToyMcFlowAO outputFile Nevt random seed bgfrac bNUE
+./ToyMcFlowAO outputFile Nevt random_seed bgfrac bNUE
 
 e.g. ./ToyMCFlowAO "outputs/10kEv50BG1HoleSampF.root" 10000 11 0.5 1
   
