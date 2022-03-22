@@ -21,7 +21,7 @@ TComplex QvectorQC[NH][nKL];
 
 //OPTIONS TO SET! 
 bool calculateTwoP = 0; //1=use 2p method (note: this is a lot slower than the others)
-bool b2holes = 1; //1=two holes, 0=1 hole
+bool b2holes = 0; //1=two holes, 0=1 hole
 bool useSampleHisto = 1; //0=use fNUE function, 1=use phi histogram for evaluating the correction terms
 
 double DeltaPhi(double phi1, double phi2); // relative angle
@@ -269,6 +269,9 @@ int main(int argc, char **argv)
 		{
 			if (useSampleHisto){
 				corrNUEi = 1./hSample->GetBinContent(phiarray[t]);
+				if(corrNUEi > 100) corrNUEi = 1.;
+				if(corrNUEi < 0.001) corrNUEi = 1.;
+				//cout << "corrNUEi = " << corrNUEi<< "at phi = " << phiarray[t] << endl;
 			}
 			else corrNUEi = 1./fNUE->Eval(phiarray[t],0,0);
 			phiweight.push_back(corrNUEi);
@@ -299,7 +302,7 @@ int main(int argc, char **argv)
 		double weightsProdSum[NH][NC] = {0.0};
 		for (Int_t i=0; i<N_tot; i++){ //start track loop 2
 			if (useSampleHisto){
-				corrNUEi = 1./hSample->GetBinContent(phiarray[i]);
+				corrNUEi = 1./hSample->GetBinContent(phiarray[i]); 
 			}
 			else corrNUEi = 1./fNUE->Eval(phiarray[i],0,0);
 			//Event plane method calculated vn
@@ -344,6 +347,7 @@ int main(int argc, char **argv)
 		CalculateQvectors(phiarray,phiweight);
 		for( int n=1; n<NH+1; n++){
 			TComplex sctwo = Two(n, -(n)) / Two(0,0).Re();
+			//cout << "sctwo" << sctwo.Re() << endl;
 			h2PCumulantVn[n-1][ic]->Fill(sctwo.Re());
 		}
 		
