@@ -374,7 +374,7 @@ void CalculateQvectors(vector <double> phiarray, vector <double> phiweight){
 
 	Int_t N_tot = phiarray.size();
 	for (int t=0; t<N_tot; t++){
-		for(int n=0; n<NH; n++){
+		for(int n=0; n<NH+1; n++){
 			Double_t tf = 1.0;
 			TComplex q[nKL];
 			for(int ik=0; ik<nKL; ik++){
@@ -384,7 +384,6 @@ void CalculateQvectors(vector <double> phiarray, vector <double> phiweight){
 			}
 		}
 	}
-
 }
 
 TComplex Q(int n, int p){
