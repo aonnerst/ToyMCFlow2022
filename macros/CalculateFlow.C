@@ -71,6 +71,7 @@ void LoadData(TString inputfilename){
 			hEventPlaneEP[ih][ic]=(TH1D*)fIn->Get(Form("hEventPlaneEPC%02dH%02d",ic,ih+1));
 			hTPcosDeltaPhi[ih][ic]=(TH1D*)fIn->Get(Form("hTPcosDeltaPhiC%02dH%02d",ic,ih+1));
 			h2PCumulantVn[ih][ic]=(TH1D*)fIn->Get(Form("h2PCumulantVnC%02dH%02d",ic,ih+1));
+			//h2PCumulantVn[ih][ic]=(TH1D*)fIn->Get(Form("hTPcosDeltaPhiC%02dH%02d",ic,ih+1)); //comment this in if no TP cumulant histo available
 			hResolution[ih][ic]=(TH1D*)fIn->Get(Form("hResolutionC%02dH%02d",ic,ih+1));
 			hResolutionDist[ih][ic]=(TH1D*)fIn->Get(Form("hResolutionDistC%02dH%02d",ic,ih+1));
 			hResolutionDistA[ih][ic]=(TH1D*)fIn->Get(Form("hResolutionDistAC%02dH%02d",ic,ih+1));

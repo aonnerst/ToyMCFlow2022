@@ -42,16 +42,26 @@ TGraphErrors *gr_vn_cent[NConfigs][NMethod][NH];
 TGraphErrors *gr_vn_true[NH];
 
 TString rootfiles[]={
-	//"../results/vnOutput_BF00_Uni_362af09_10000Evts_2holes.root",
-	//"../results/vnOutput_BF10_Uni_362af09_10000Evts_2holes.root",
-	//"../results/vnOutput_BF50_Uni_362af09_10000Evts_2holes.root",
-	"../results/vnOutput_BF00_NUE_362af09_100kEvts_2holes.root",
-	"../results/vnOutput_BF10_NUE_362af09_100kEvts_2holes.root",
-	"../results/vnOutput_BF50_NUE_362af09_100kEvts_2holes.root",
-	//"../results/vnOutput_BF00_NUE_weightTest_100Evts3.root",
-	//"../results/vnOutput_BF10_NUE_weightTest_100Evts3.root",
-	//"../results/vnOutput_BF50_NUE_weightTest_100Evts3.root",
+	//"../results/VnOutput_BG00_0Hole_SampF.root",
+	"../results/VnOutput_BG00_1Hole_SampF.root",
+	//"../results/VnOutput_BG00_2Hole_SampF.root",
+	//"../results/VnOutput_BG00_0Hole_SampH.root",
+	//"../results/VnOutput_BG00_1Hole_SampH.root",
+	//"../results/VnOutput_BG00_2Hole_SampH.root",
 
+	//"../results/VnOutput_BG20_0Hole_SampF.root",
+	"../results/VnOutput_BG20_1Hole_SampF.root",
+	//"../results/VnOutput_BG20_2Hole_SampF.root",
+	//"../results/VnOutput_BG20_0Hole_SampH.root",
+	//"../results/VnOutput_BG20_1Hole_SampH.root",
+	//"../results/VnOutput_BG20_2Hole_SampH.root",
+
+	//"../results/VnOutput_BG50_0Hole_SampF.root",
+	"../results/VnOutput_BG50_1Hole_SampF.root",
+	//"../results/VnOutput_BG50_2Hole_SampF.root",
+	//"../results/VnOutput_BG50_0Hole_SampH.root",
+	//"../results/VnOutput_BG50_1Hole_SampH.root",
+	//"../results/VnOutput_BG50_2Hole_SampH.root",
 };
 
 void LoadGraphs();
@@ -101,14 +111,14 @@ void DrawVnCentConfig(int i = 0, int ib=0, int ih=0) // i = method, ib= what sor
 	double ly=-1.2*TMath::MinElement(NC,gr_vn_true[ih]->GetY()),hy=4.5*TMath::MaxElement(NC,gr_vn_true[ih]->GetY());
 	//double ly=-0.05,hy=0.04;
 	TH2F *hfr = new TH2F("hfr"," ", 100,lowx, highx, 10, ly, hy); // numbers: tics x, low limit x, upper limit x, tics y, low limit y, upper limit y
-	hset( *hfr, "Centrality %", "v_{n}",0.7,0.7, 0.07,0.07, 0.01,0.01, 0.03,0.03, 510,505);//settings of the upper pad: x-axis, y-axis
+	hsetChangeXaxisLabel( *hfr, "Centrality %", "v_{n}",0.7,0.7, 0.07,0.07, 0.01,0.01, 0.03,0.03, 510,505,gr_vn_true[0], NC,"hej");//settings of the upper pad: x-axis, y-axis
 	hfr->Draw();
 	
 
 	legend->AddEntry((TObjArray*)NULL,Form("Method %s",gr_Names[i].Data())," ");
 	//legend->AddEntry((TObjArray*)NULL,Form("True value of v_{2}: %s=%0.4f,% s=%0.4f, %s=%0.4f",strCentrality[0].Data(),inputVn[1][0],strCentrality[1].Data(),inputVn[1][1],strCentrality[2].Data(),inputVn[1][2])," ");
 
-
+	
 	gr_vn_true[ih]->SetLineColor(gColors[0]);
 	gr_vn_true[ih]->SetMarkerStyle(gMarkers[0]);
 	gr_vn_true[ih]->SetMarkerColor(gColors[0]);
@@ -117,7 +127,7 @@ void DrawVnCentConfig(int i = 0, int ib=0, int ih=0) // i = method, ib= what sor
 	cout<<"creating canvas" << endl;
 
 	for(int icon=0; icon<NConfigs; icon++){
-		cout<<"getting graphs" << endl;
+
 		gr_vn_cent[icon][i][ih]->SetLineColor(gColors[icon+1]);
 		gr_vn_cent[icon][i][ih]->SetMarkerStyle(gMarkers[icon+1]);
 		gr_vn_cent[icon][i][ih]->SetMarkerColor(gColors[icon+1]);
@@ -132,23 +142,19 @@ void DrawVnCentConfig(int i = 0, int ib=0, int ih=0) // i = method, ib= what sor
 	//====Lower pad, i.e. ratios
 	TGraphErrors *grRatio[NConfigs];
 	
-		
-	
 	grRatio[0]=GetRatio(gr_vn_cent[0][i][ih],gr_vn_true[ih]);
 	grRatio[1]=GetRatio(gr_vn_cent[1][i][ih],gr_vn_true[ih]);
 	grRatio[2]=GetRatio(gr_vn_cent[2][i][ih],gr_vn_true[ih]);
-	
-
 	
 	p = fpad->GetPad(2);
 	p->SetTickx(); p->SetGridy(0); p->SetLogx(0), p->SetLogy(0); p->cd();
 	TH2F *hfr1 = new TH2F("hfr1"," ", 100, lowx, highx, 10, 0.2*TMath::MinElement(NC,grRatio[0]->GetY()), 1.5*TMath::MaxElement(NC,grRatio[0]->GetY()));
 	//TH2F *hfr1 = new TH2F("hfr1"," ", 100, lowx, highx, 10, 0.0, 2.0);
-	hset( *hfr1, "Centrality %", "Calculations/True value",0.7,0.7, 0.07,0.07, 0.03,0.03, 0.08,0.08, 510,505);
+	hsetChangeXaxisLabel( *hfr1, "Centrality %", "v_{n}",0.7,0.7, 0.07,0.07, 0.01,0.01, 0.03,0.03, 510,505,grRatio[0], NC,"hej");
 	hfr1->Draw();
 	for(int ir=0;ir<NConfigs;ir++){
 		for(int icon=1; icon<NConfigs; icon++){
-			
+
 			grRatio[ir]->SetLineColor(gColors[ir+1]);
 			grRatio[ir]->SetMarkerStyle(gMarkers[ir+1]);
 			grRatio[ir]->SetMarkerColor(gColors[ir+1]);
@@ -157,7 +163,7 @@ void DrawVnCentConfig(int i = 0, int ib=0, int ih=0) // i = method, ib= what sor
 		}
 	}
 	
-	gPad->GetCanvas()->SaveAs(Form("../figs/CentDepVn_v%2d_%s_%s_2Holes.pdf",ih+1,BGNames[ib].Data(),gr_Names[i].Data()));
+	gPad->GetCanvas()->SaveAs(Form("../figs/CentDepVn_v%2d_%s_%s_1Hole_SampF.pdf",ih+1,BGNames[ib].Data(),gr_Names[i].Data()));
 }
 
 

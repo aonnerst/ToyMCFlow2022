@@ -14,6 +14,7 @@
 #include <vector>
 #include "../include/toyflowinputs.h"
 #include "../include/rootcommon.h"
+#include "../include/Filipad.h"
 
 using namespace std;
 
@@ -28,11 +29,11 @@ Double_t vnIn[NC][NH]={{0.}};
 TGraphErrors *gr_vnin[NC];
 string strHDummy[] = {"2","3","4","5","6","7","8","9","10","11","12"};//vn
 TString ConfigNames[NMethod]={
-	"No BG",
+	"No BG Uniform",
 	//"10 Uniform BG",
 	//"50 Uniform BG",
-	"10 NUE BG",
-	"50 NUE BG",
+	"No BG 1 hole",
+	"No BG 2 hole",
 };
 const int Nbg = 2;
 TString BGNames[Nbg]={
@@ -44,9 +45,9 @@ TString rootfiles[]={
 	//"../results/vnOutput_BF00_Uni_9385abc_1000Evts.root ",
 	//"../results/vnOutput_BF10_Uni_9385abc_1000Evts.root ",
 	//"../results/vnOutput_BF50_Uni_9385abc_1000Evts.root ",
-	"../results/vnOutput_BF00_NUE_362af09_100kEvts_2holes.root",
-	"../results/vnOutput_BF10_NUE_362af09_100kEvts_2holes.root",
-	"../results/vnOutput_BF50_NUE_362af09_100kEvts_2holes.root",
+	"../results/VnOutput_BG50_0Hole_SampF.root",
+	"../results/VnOutput_BG50_1Hole_SampF.root",
+	"../results/VnOutput_BG50_2Hole_SampF.root",
 	//"../results/vnOutput_BF00_NUE_weightTest_100Evts3.root",
 	//"../results/vnOutput_BF10_NUE_weightTest_100Evts3.root",
 	//"../results/vnOutput_BF50_NUE_weightTest_100Evts3.root",
@@ -113,12 +114,17 @@ void DrawPSpectra(int ic=0, int i=0)
 	can->SetLeftMargin(0.15);
    	can->SetBottomMargin(0.15);
    	can->SetLogy(1);
-	TLegend *legend = new TLegend(0.5,0.7,0.7,0.9,"","brNDC");
+   	Filipad *fpad= new Filipad(1,1.1,0.4,100,100,1.2,5);
+	fpad->Draw();
+	//====Upper pad
+	TPad *p = fpad->GetPad(1); 
+	p->SetTickx(); p->SetLogx(0); p->SetLogy(0); p->cd();
+	TLegend *legend = new TLegend(0.4,0.5,0.8,0.75,"","brNDC");
     legend->SetTextSize(0.04);legend->SetBorderSize(0);legend->SetFillStyle(0);//legend settings;
 	double lowx = 0.5,highx=6.5;
-  	double ly=1.2e-5,hy=4e-1;
+  	double ly=-1.2*TMath::MinElement(NC,gr_vnin[ic]->GetY()),hy=2.0*TMath::MaxElement(NC,gr_vnin[ic]->GetY());
   	TH2F *hfr = new TH2F("hfr"," ", 7,lowx, highx, 10, ly, hy); // numbers: tics x, low limit x, upper limit x, tics y, low limit y, upper limit y
-  	hset( *hfr, "n+1", "v_{n}",0.7,0.7, 0.07,0.07, 0.01,0.01, 0.03,0.03, 510,505);//settings of the upper pad: x-axis, y-axis
+  	hset( *hfr, "n+1", "v_{n}",0.7,0.7, 0.07,0.07, 0.01,0.01, 0.04,0.04, 510,505);//settings of the upper pad: x-axis, y-axis
   	//Changelabel(hfr,gr_pvn[0][ic],strHDummy);
   	hfr->Draw();
   	legend->AddEntry((TObjArray*)NULL,Form("Centrality %s - %s method",strCentrality[ic].Data(), gr_Names[i].Data())," ");
@@ -138,7 +144,32 @@ void DrawPSpectra(int ic=0, int i=0)
   		
   	}
   	legend -> Draw("same");
-   	gPad->GetCanvas()->SaveAs(Form("../figs/PSpectraC%02d%s.pdf",ic,gr_Names[i].Data()));
+
+  	//====Lower pad, i.e. ratios
+	TGraphErrors *grRatio[Nconfigs];
+	
+	grRatio[0]=GetRatio(gr_pvn[0][ic][i],gr_vnin[ic]);
+	grRatio[1]=GetRatio(gr_pvn[1][ic][i],gr_vnin[ic]);
+	grRatio[2]=GetRatio(gr_pvn[2][ic][i],gr_vnin[ic]);
+	
+	p = fpad->GetPad(2);
+	p->SetTickx(); p->SetGridy(0); p->SetLogx(0), p->SetLogy(0); p->cd();
+	TH2F *hfr1 = new TH2F("hfr1"," ", 100, lowx, highx, 10, 0.2*TMath::MinElement(NC,grRatio[0]->GetY()), 2.0*TMath::MaxElement(NC,grRatio[0]->GetY()));
+	//TH2F *hfr1 = new TH2F("hfr1"," ", 100, lowx, highx, 10, 0.0, 2.0);
+	hset( *hfr1, "n+1", "Calculation/True Value",0.7,0.7, 0.07,0.07, 0.01,0.01, 0.06,0.06, 510,505);
+	hfr1->Draw();
+	for(int ir=0;ir<Nconfigs;ir++){
+		for(int icon=1; icon<Nconfigs; icon++){
+
+			grRatio[ir]->SetLineColor(gColors[ir+1]);
+			grRatio[ir]->SetMarkerStyle(gMarkers[ir+1]);
+			grRatio[ir]->SetMarkerColor(gColors[ir+1]);
+			grRatio[ir]->Draw("lpsame");
+		
+		}
+	}
+
+   	gPad->GetCanvas()->SaveAs(Form("../figs/PSpectraC%02dFunc%s_50Bg.pdf",ic,gr_Names[i].Data()));
 }
 /*
 void SaveGraphs(int ic = 0)

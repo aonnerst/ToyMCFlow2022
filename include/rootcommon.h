@@ -31,7 +31,50 @@ void hset(TH1& hid, TString xtit="", TString ytit="",
     hid.GetXaxis()->SetTitleFont(42);
     hid.GetYaxis()->SetTitleFont(42);
 }
+/*
+void hsetChangeXaxisLabel(TH1& hid, TString xtit="", TString ytit="",
+        double titoffx = 1.1, double titoffy = 1.1,
+        double titsizex = 0.06, double titsizey = 0.06,
+        double labeloffx = 0.01, double labeloffy = 0.001,
+        double labelsizex = 0.05, double labelsizey = 0.05,
+        int divx = 505, int divy=505,
+        TGraphErrors *gr, 
+        int ndatapoints = 3, TString ticklabel= "0-5\%")
+{
+    hid.GetXaxis()->CenterTitle(1);
+    hid.GetYaxis()->CenterTitle(1);
 
+    hid.GetXaxis()->SetTitleOffset(titoffx);
+    hid.GetYaxis()->SetTitleOffset(titoffy);
+
+    hid.GetXaxis()->SetTitleSize(titsizex);
+    hid.GetYaxis()->SetTitleSize(titsizey);
+
+    hid.GetXaxis()->SetLabelOffset(labeloffx);
+    hid.GetYaxis()->SetLabelOffset(labeloffy);
+
+    hid.GetXaxis()->SetLabelSize(labelsizex);
+    hid.GetYaxis()->SetLabelSize(labelsizey);
+
+    hid.GetXaxis()->SetNdivisions(divx);
+    hid.GetYaxis()->SetNdivisions(divy);
+
+    hid.GetXaxis()->SetTitle(xtit);
+    hid.GetYaxis()->SetTitle(ytit);
+
+    hid.GetXaxis()->SetLabelFont(42);
+    hid.GetYaxis()->SetLabelFont(42);
+    hid.GetXaxis()->SetTitleFont(42);
+    hid.GetYaxis()->SetTitleFont(42);
+
+    TAxis* xAxis = gr->GetXaxis();
+    int nbins = xAxis->GetNbins();
+    for(int ind=0; ind < ndatapoints; ind++){
+        int binindex = xAxis->FindBin(ind*1.0);
+        xAxis->ChangeLabel(binindex,-1,1,-1,3,-1,ticklabel);
+    }
+}
+*/
 // Theory-Data/Theory
 TGraphAsymmErrors *GetDataOverTheory(TGraphAsymmErrors *gr, TF1 *ftheory ){
     double x[300], y[300], exl[300], exh[300], eyl[300], eyh[300];
