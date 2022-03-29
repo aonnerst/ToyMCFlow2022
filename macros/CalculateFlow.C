@@ -117,6 +117,7 @@ void Calculate(){
 			MeanArrayTwoParticle[n][ic]=h2PCumulantVn[n][ic]->GetMean();
 			MeanArrayTwoPartError[n][ic]=h2PCumulantVn[n][ic]->GetMeanError();
 			MeanArrayTPTwoParticle[n][ic]=hTPcosDeltaPhi[n][ic]->GetMean();
+			cout<< MeanArrayTPTwoParticle[n][ic]<<endl;
 			MeanArrayTPTwoPartError[n][ic]=hTPcosDeltaPhi[n][ic]->GetMeanError();
 			MeanArrayEventPlane[n][ic]=hEventPlane[n][ic]->GetMean();
 			MeanArrayEvtPlError[n][ic]=hEventPlane[n][ic]->GetMeanError();
@@ -128,6 +129,7 @@ void Calculate(){
 			//for loop for swapping  vn arrays for vn[ic][n] !transformation!
 
 			vn_TPTwoPart[n][ic]=TMath::Sqrt(TMath::Abs(MeanArrayTPTwoParticle[n][ic]));
+			//cout<< "calculating loop: "<< vn_TPTwoPart[n][ic]<< endl;
 			vn_TPTwoPartError[n][ic]=0.5*(1.0/(TMath::Power(MeanArrayTPTwoParticle[n][ic],0.5))*MeanArrayTPTwoPartError[n][ic]);
 			vn_TwoPart[n][ic]=TMath::Sqrt(TMath::Abs(MeanArrayTwoParticle[n][ic]));
 			vn_TwoPartError[n][ic]=0.5*(1.0/(TMath::Power(MeanArrayTwoParticle[n][ic],0.5))*MeanArrayTwoPartError[n][ic]);
@@ -157,6 +159,7 @@ void Calculate(){
 			pvn_EvtPl[ic][ih]            = vn_EvtPl[ih][ic];
 			pvn_EvtPlQvec[ic][ih]        = vn_EvtPlQvec[ih][ic];
 			pMeanArrayEvtPlError[ic][ih] = pMeanArrayEvtPlError[ih][ic];
+			cout << vn_TPTwoPart[ih][ic]<< endl;
 		}
 	}
 

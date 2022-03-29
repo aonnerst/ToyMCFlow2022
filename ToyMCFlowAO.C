@@ -21,7 +21,7 @@ TComplex QvectorQC[NH][nKL];
 
 //OPTIONS TO SET! 
 bool calculateTwoP = 1; //1=use 2p method (note: this is a lot slower than the others)
-bool b2holes = 0; //1=two holes, 0=1 hole
+bool b2holes = 1; //1=two holes, 0=1 hole
 bool useSampleHisto = 0; //0=use fNUE function, 1=use phi histogram for evaluating the correction terms
 
 double DeltaPhi(double phi1, double phi2); // relative angle

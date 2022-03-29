@@ -22,18 +22,15 @@ Int_t gMarkers[]= {20,24,21,25,22,26,23,27,32,28};
 Int_t gColors[]={kRed+1, kOrange+2, kCyan+2, kSpring-6, kRed-7, kOrange+1,kCyan-6,kGreen+7,kRed-9,kOrange-9,kAzure+6,kGreen-9};
 Int_t gStyles[]={1,2,3,4,5,6,7,8,9,10};
 const int NMethod=3;
-const int Nconfigs=3;
+const int Nconfigs=2;
 TGraphErrors *gr_pvn[Nconfigs][NC][NMethod];
-TString gr_Names[NMethod]={"SP","TP","TPAz"};
+TString gr_Names[NMethod]={"SP","TP","EP"};
 Double_t vnIn[NC][NH]={{0.}};
 TGraphErrors *gr_vnin[NC];
 string strHDummy[] = {"2","3","4","5","6","7","8","9","10","11","12"};//vn
 TString ConfigNames[NMethod]={
-	"Uniform",
-	//"10 Uniform BG",
-	//"50 Uniform BG",
-	"1 hole",
-	"2 hole",
+	"Sample from Function",
+	"Sample from Histogram"
 };
 const int Nbg = 2;
 TString BGNames[Nbg]={
@@ -42,16 +39,8 @@ TString BGNames[Nbg]={
 };
 
 TString rootfiles[]={
-	//"../results/vnOutput_BF00_Uni_9385abc_1000Evts.root ",
-	//"../results/vnOutput_BF10_Uni_9385abc_1000Evts.root ",
-	//"../results/vnOutput_BF50_Uni_9385abc_1000Evts.root ",
-	"../results/VnOutput_BG50_0Hole_SampF_2PC.root",
-	"../results/VnOutput_BG50_1Hole_SampF_2PC.root",
-	"../results/VnOutput_BG50_2Hole_SampF_2PC.root",
-	//"../results/vnOutput_BF00_NUE_weightTest_100Evts3.root",
-	//"../results/vnOutput_BF10_NUE_weightTest_100Evts3.root",
-	//"../results/vnOutput_BF50_NUE_weightTest_100Evts3.root",
-
+	"../results/VnOutput_BG00_1Hole_SampF.root",
+	"../results/VnOutput_BG00_1Hole_SampH.root"
 };
 
 void LoadData(); //Loading TGraphs
@@ -59,11 +48,11 @@ void DrawPSpectra(int ic=0, int i=0);
 //void SaveGraphs(int);
 
 //---Main Function------
-void PSpectra()
+void CompSampCorr()
 {
 	LoadData();
 	for(int ic=0; ic<NC; ic++) {
-		for(int i=0; i<NMethod; i++){
+		for(int i=0; i<1; i++){
 			DrawPSpectra(ic,i);
 			//SaveGraphs(ic);
 		}
@@ -127,7 +116,7 @@ void DrawPSpectra(int ic=0, int i=0)
   	hset( *hfr, "n+1", "v_{n}",0.7,0.7, 0.07,0.07, 0.01,0.01, 0.04,0.04, 510,505);//settings of the upper pad: x-axis, y-axis
   	//Changelabel(hfr,gr_pvn[0][ic],strHDummy);
   	hfr->Draw();
-  	legend->AddEntry((TObjArray*)NULL,Form("Centrality %s, %s method, 20% BG",strCentrality[ic].Data(), gr_Names[i].Data())," ");
+  	legend->AddEntry((TObjArray*)NULL,Form("Centrality %s - %s method for NUA with 1 hole",strCentrality[ic].Data(), gr_Names[i].Data())," ");
 
 	gr_vnin[ic]->SetLineColor(kSpring-6);
 	gr_vnin[ic]->SetLineWidth(3);
@@ -150,7 +139,6 @@ void DrawPSpectra(int ic=0, int i=0)
 	
 	grRatio[0]=GetRatio(gr_pvn[0][ic][i],gr_vnin[ic]);
 	grRatio[1]=GetRatio(gr_pvn[1][ic][i],gr_vnin[ic]);
-	grRatio[2]=GetRatio(gr_pvn[2][ic][i],gr_vnin[ic]);
 	
 	p = fpad->GetPad(2);
 	p->SetTickx(); p->SetGridy(0); p->SetLogx(0), p->SetLogy(0); p->cd();
@@ -169,15 +157,6 @@ void DrawPSpectra(int ic=0, int i=0)
 		}
 	}
 
-   	gPad->GetCanvas()->SaveAs(Form("../figs/PSpectraC%02dFunc%s_50Bg.pdf",ic,gr_Names[i].Data()));
+   	gPad->GetCanvas()->SaveAs(Form("../figs/PSpectraC%02dFuncVSHist%s_00Bg.pdf",ic,gr_Names[i].Data()));
 }
-/*
-void SaveGraphs(int ic = 0)
-{
-	TFile *output = new TFile("out_GraphsForRatio.root","recreate");
-	for(int im=0; im<NMethod; im++) gr_pvn[ic][im]->Write(Form("gr_pv%02d_%s",ic+1, gr_Names[im].Data()));
-	gr_vnin[ic]->Write(Form("gr_vnin_%02d",ic));
-	output->Write();
-	output->Close();
-}
-*/
+
